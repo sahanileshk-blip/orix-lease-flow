@@ -11,6 +11,7 @@ import {
   Users,
   Calculator,
   LogOut,
+  HelpCircle,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -40,6 +41,7 @@ const mainItems = [
   { title: "Documents", url: "/documents", icon: FolderOpen },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Profile", url: "/profile", icon: User },
+  { title: "FAQ", url: "/faq", icon: HelpCircle },
 ];
 
 const adminItems = [
@@ -62,7 +64,7 @@ export function AppSidebar() {
                 OX
               </div>
               <div>
-                <p className="font-heading font-bold text-sm text-sidebar-foreground">ORIX India</p>
+                <p className="font-heading font-bold text-sm text-[#ce1439]">ORIX India</p>
                 <p className="text-[10px] text-sidebar-muted">Customer Service Portal</p>
               </div>
             </div>
@@ -77,7 +79,7 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          {/* <SidebarGroupLabel>Main</SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (

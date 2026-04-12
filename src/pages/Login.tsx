@@ -47,13 +47,17 @@ const Login = () => {
             <div className="pt-2 space-y-3">
               <p className="text-xs text-muted-foreground text-center">Choose login type (demo)</p>
               <div className="grid grid-cols-2 gap-3">
-                <Button onClick={() => handleLogin("admin")} className="gap-2 h-11">
+                <Button onClick={() => handleLogin("superadmin")} className="gap-2 h-11 bg-[#ce1439] hover:bg-[#ce1439]/90 text-white">
+                  <Shield className="h-4 w-4" />
+                  Superadmin
+                </Button>
+                <Button onClick={() => handleLogin("admin")} variant="outline" className="gap-2 h-11">
                   <Shield className="h-4 w-4" />
                   ORIX Admin
                 </Button>
-                <Button onClick={() => handleLogin("client")} variant="outline" className="gap-2 h-11">
+                <Button onClick={() => handleLogin("client")} variant="outline" className="gap-2 h-11 col-span-2">
                   <Users className="h-4 w-4" />
-                  Client User
+                  Client User (Tata Motors)
                 </Button>
               </div>
             </div>

@@ -2,7 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Bell } from "lucide-react";
 import { Link } from "react-router-dom";
-import { notifications } from "@/data/sampleData";
+import { notifications, costCenters, locations } from "@/data/sampleData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,11 +13,13 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [clientFilter, setClientFilter] = useState("all");
+  const [costCenterFilter, setCostCenterFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
   const unreadCount = notifications.filter((n) => !n.read).length;
   const { user } = useAuth();
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
@@ -45,6 +47,30 @@ export function AppLayout({ children }: AppLayoutProps) {
               {user && !user.isAdmin && (
                 <span className="text-xs text-muted-foreground hidden sm:block">{user.clientName}</span>
               )}
+              <div className="hidden md:flex items-center gap-2">
+                <Select value={costCenterFilter} onValueChange={setCostCenterFilter}>
+                  <SelectTrigger className="h-8 w-[150px] text-xs">
+                    <SelectValue placeholder="Cost Center" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Cost Centers</SelectItem>
+                    {costCenters.map((cc) => (
+                      <SelectItem key={cc} value={cc}>{cc}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger className="h-8 w-[140px] text-xs">
+                    <SelectValue placeholder="Location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {locations.map((loc) => (
+                      <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Link to="/notifications" className="relative p-2 rounded-md hover:bg-muted transition-colors">

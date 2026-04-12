@@ -1,13 +1,29 @@
 import { AppLayout } from "@/components/AppLayout";
-import { assets } from "@/data/sampleData";
+import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Car, Search, Gauge, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Car, Search, Download } from "lucide-react";
 
-const vehicles = assets.filter(a => a.type === 'Vehicle');
+function downloadCSV(data: any[], filename: string) {
+  const headers = ['Asset Tag', 'Registration No', 'Vehicle', 'Client', 'Driver', 'Location', 'Cost Center', 'Insurance Expiry', 'Lease End', 'Status'];
+  const rows = data.map(a => [
+    a.assetTag, a.registrationNo || '', `${a.make} ${a.model}`, a.clientName, a.driver || '', a.location, a.costCenter, a.insuranceExpiry || '', a.leaseEndDate, a.status
+  ]);
+  const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const VehicleFleet = () => {
+  const { assets } = useAppData();
+  const vehicles = assets.filter(a => a.type === 'Vehicle');
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
 
@@ -19,12 +35,17 @@ const VehicleFleet = () => {
 
   return (
     <AppLayout>
-      <div className="page-header">
-        <h1 className="page-title">Vehicle Fleet Management</h1>
-        <p className="page-description">Manage vehicle registrations, drivers, insurance, and lease details</p>
+      <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="page-title">Vehicle Fleet Management</h1>
+          <p className="page-description">Manage vehicle registrations, drivers, insurance, and lease details</p>
+        </div>
+        <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'vehicle-fleet.csv')}>
+          <Download className="h-4 w-4" /> Download CSV
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
         <div className="kpi-card flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <Car className="h-5 w-5 text-primary" />
@@ -39,20 +60,6 @@ const VehicleFleet = () => {
           <div>
             <p className="text-xs text-muted-foreground">Active</p>
             <p className="text-xl font-bold font-heading">{vehicles.filter(a => a.status === 'Active').length}</p>
-          </div>
-        </div>
-        <div className="kpi-card flex items-center gap-3">
-          <Gauge className="h-5 w-5 text-warning" />
-          <div>
-            <p className="text-xs text-muted-foreground">In Maintenance</p>
-            <p className="text-xl font-bold font-heading">{vehicles.filter(a => a.status === 'Under Maintenance').length}</p>
-          </div>
-        </div>
-        <div className="kpi-card flex items-center gap-3">
-          <Shield className="h-5 w-5 text-accent" />
-          <div>
-            <p className="text-xs text-muted-foreground">Insurance Due</p>
-            <p className="text-xl font-bold font-heading">1</p>
           </div>
         </div>
       </div>
@@ -84,6 +91,7 @@ const VehicleFleet = () => {
               <th>Client</th>
               <th>Driver</th>
               <th>Location</th>
+              <th>Cost Center</th>
               <th>Insurance Expiry</th>
               <th>Lease End</th>
               <th>Status</th>
@@ -98,6 +106,7 @@ const VehicleFleet = () => {
                 <td className="text-muted-foreground">{a.clientName}</td>
                 <td>{a.driver}</td>
                 <td>{a.location}</td>
+                <td className="text-muted-foreground">{a.costCenter}</td>
                 <td className="text-muted-foreground">{a.insuranceExpiry}</td>
                 <td className="text-muted-foreground">{a.leaseEndDate}</td>
                 <td>

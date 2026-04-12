@@ -1,13 +1,29 @@
 import { AppLayout } from "@/components/AppLayout";
-import { assets } from "@/data/sampleData";
+import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Monitor, Search, Cpu, HardDrive } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Monitor, Search, Cpu, HardDrive, Download } from "lucide-react";
 
-const itAssets = assets.filter(a => a.type === 'IT');
+function downloadCSV(data: any[], filename: string) {
+  const headers = ['Asset Tag', 'Serial No', 'Description', 'Category', 'Client', 'Assigned To', 'Condition', 'Location', 'Cost Center', 'Lease Expiry', 'Status'];
+  const rows = data.map(a => [
+    a.assetTag, a.serialNo || '', a.description, a.category || '', a.clientName, a.assignedTo, a.condition || '', a.location, a.costCenter, a.leaseEndDate, a.status
+  ]);
+  const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const ITAssets = () => {
+  const { assets } = useAppData();
+  const itAssets = assets.filter(a => a.type === 'IT');
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -21,9 +37,14 @@ const ITAssets = () => {
 
   return (
     <AppLayout>
-      <div className="page-header">
-        <h1 className="page-title">IT Asset Management</h1>
-        <p className="page-description">Track hardware and software assets, allocation, and compliance</p>
+      <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="page-title">IT Asset Management</h1>
+          <p className="page-description">Track hardware and software assets, allocation, and compliance</p>
+        </div>
+        <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'it-assets.csv')}>
+          <Download className="h-4 w-4" /> Download CSV
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -95,6 +116,8 @@ const ITAssets = () => {
               <th>Client</th>
               <th>Assigned To</th>
               <th>Condition</th>
+              <th>Location</th>
+              <th>Cost Center</th>
               <th>Lease Expiry</th>
               <th>Status</th>
             </tr>
@@ -113,6 +136,8 @@ const ITAssets = () => {
                     {a.condition}
                   </span>
                 </td>
+                <td>{a.location}</td>
+                <td className="text-muted-foreground">{a.costCenter}</td>
                 <td className="text-muted-foreground">{a.leaseEndDate}</td>
                 <td>
                   <span className={`status-badge ${a.status === 'Active' ? 'status-active' : a.status === 'Under Maintenance' ? 'status-pending' : 'status-closed'}`}>

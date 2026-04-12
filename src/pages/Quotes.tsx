@@ -223,7 +223,6 @@ const Quotes = () => {
               <th>Quote Code</th>
               <th>Enquiry</th>
               <th>Customer</th>
-              <th>Product</th>
               <th>Tenure</th>
               <th>Asset Cost</th>
               <th>Monthly Rental</th>
@@ -238,7 +237,6 @@ const Quotes = () => {
                 <td className="font-medium text-primary cursor-pointer hover:underline">{q.quotationCode}</td>
                 <td>{q.enquiryCode}</td>
                 <td>{q.customerName}</td>
-                <td>{q.productType}</td>
                 <td>{q.leaseTenure} mo</td>
                 <td>{formatCurrency(q.assetCost)}</td>
                 <td>{formatCurrency(q.monthlyRental)}</td>

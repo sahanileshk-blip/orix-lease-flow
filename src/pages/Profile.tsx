@@ -20,7 +20,7 @@ const Profile = () => {
         <p className="page-description">Manage your account and security preferences</p>
       </div>
 
-      <div className="max-w-2xl space-y-6">
+      <div className="w-full space-y-6">
         {/* Profile Info */}
         <div className="bg-card rounded-lg border p-6">
           <h2 className="font-heading font-semibold text-base mb-4">Personal Information</h2>

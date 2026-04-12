@@ -1,16 +1,11 @@
 import { AppLayout } from "@/components/AppLayout";
-import { dashboardKPIs, assets, contracts, invoices, tickets, notifications } from "@/data/sampleData";
-import { Car, Monitor, FileText, Receipt, AlertTriangle, TicketPlus, TrendingUp, IndianRupee } from "lucide-react";
+import { useAppData } from "@/hooks/useAppData";
+import { Car, FileText, AlertTriangle, TicketPlus, TrendingUp, IndianRupee, Calendar } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 
 const COLORS = ["hsl(210, 52%, 24%)", "hsl(199, 89%, 48%)", "hsl(142, 71%, 45%)", "hsl(38, 92%, 50%)", "hsl(0, 72%, 51%)"];
-
-const assetDistribution = [
-  { name: "Vehicle", value: dashboardKPIs.assetsByType.Vehicle },
-  { name: "IT Assets", value: dashboardKPIs.assetsByType.IT },
-];
-
-const statusDistribution = Object.entries(dashboardKPIs.assetsByStatus).map(([name, value]) => ({ name, value }));
 
 const monthlyTrend = [
   { month: "Nov", value: 220000 },
@@ -25,7 +20,59 @@ function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 }
 
+function getExpiringLeases(contracts: any[], days: number) {
+  const now = new Date();
+  const futureDate = new Date();
+  futureDate.setDate(now.getDate() + days);
+  return contracts.filter((c) => {
+    const endDate = new Date(c.endDate);
+    return endDate >= now && endDate <= futureDate && c.status === 'Active';
+  });
+}
+
+function getLeaseExpiryTimeline(contracts: any[], days: number) {
+  const now = new Date();
+  const futureDate = new Date();
+  futureDate.setDate(now.getDate() + days);
+
+  // Group by month
+  const monthMap: Record<string, number> = {};
+  contracts.forEach((c) => {
+    const endDate = new Date(c.endDate);
+    if (endDate >= now && endDate <= futureDate) {
+      const monthKey = endDate.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+      monthMap[monthKey] = (monthMap[monthKey] || 0) + 1;
+    }
+  });
+
+  // If within the range, show all upcoming months even with zeros
+  const result = [];
+  const tempDate = new Date(now);
+  while (tempDate <= futureDate) {
+    const key = tempDate.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+    if (!result.find(r => r.month === key)) {
+      result.push({ month: key, count: monthMap[key] || 0 });
+    }
+    tempDate.setMonth(tempDate.getMonth() + 1);
+  }
+
+  return result;
+}
+
 const Dashboard = () => {
+  const { dashboardKPIs, contracts, tickets, notifications } = useAppData();
+  const [expiryWindow, setExpiryWindow] = useState("180");
+  const [timelineWindow, setTimelineWindow] = useState("180");
+
+  const assetDistribution = [
+    { name: "Vehicle", value: dashboardKPIs.assetsByType.Vehicle },
+    { name: "IT Assets", value: dashboardKPIs.assetsByType.IT },
+  ];
+  const statusDistribution = Object.entries(dashboardKPIs.assetsByStatus).map(([name, value]) => ({ name, value }));
+
+  const expiringLeases = getExpiringLeases(contracts, parseInt(expiryWindow));
+  const leaseTimeline = getLeaseExpiryTimeline(contracts, parseInt(timelineWindow));
+
   const recentTickets = tickets.filter((t) => t.status === "Open" || t.status === "In Progress").slice(0, 3);
   const recentNotifications = notifications.filter((n) => !n.read).slice(0, 4);
 
@@ -77,15 +124,30 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Expiring Leases — replaces Overdue Invoices */}
         <div className="kpi-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Overdue Invoices</p>
-              <p className="text-2xl font-bold font-heading mt-1 text-destructive">{dashboardKPIs.overdueInvoices}</p>
-              <p className="text-xs text-destructive mt-1">{formatCurrency(dashboardKPIs.overdueAmount)} outstanding</p>
+              <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                Expiring Leases
+              </p>
+              <p className="text-2xl font-bold font-heading mt-1 text-warning">{expiringLeases.length}</p>
+              <p className="text-xs text-muted-foreground mt-1">within {expiryWindow} days</p>
             </div>
-            <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+            <div className="flex flex-col items-end gap-2">
+              <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-warning" />
+              </div>
+              <Select value={expiryWindow} onValueChange={setExpiryWindow}>
+                <SelectTrigger className="h-7 w-[90px] text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="90">90 days</SelectItem>
+                  <SelectItem value="180">180 days</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -94,7 +156,7 @@ const Dashboard = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="bg-card rounded-lg border p-5">
-          <h3 className="font-heading font-semibold text-sm mb-4">Asset Distribution</h3>
+          <h3 className="font-heading font-semibold text-sm mb-4">Asset Distribution by Type</h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={assetDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
@@ -106,7 +168,7 @@ const Dashboard = () => {
         </div>
 
         <div className="bg-card rounded-lg border p-5">
-          <h3 className="font-heading font-semibold text-sm mb-4">Asset Status</h3>
+          <h3 className="font-heading font-semibold text-sm mb-4">Asset Status Overview</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={statusDistribution}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 20%, 90%)" />
@@ -130,6 +192,32 @@ const Dashboard = () => {
             </LineChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      {/* Lease Expiry Timeline */}
+      <div className="bg-card rounded-lg border p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-heading font-semibold text-sm">Lease Expiry Timeline</h3>
+          <Select value={timelineWindow} onValueChange={setTimelineWindow}>
+            <SelectTrigger className="h-8 w-[120px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">30 days</SelectItem>
+              <SelectItem value="90">90 days</SelectItem>
+              <SelectItem value="180">180 days</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={leaseTimeline}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 20%, 90%)" />
+            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" name="Expiring Leases" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Recent Activity */}

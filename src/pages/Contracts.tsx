@@ -1,20 +1,38 @@
 import { AppLayout } from "@/components/AppLayout";
-import { contracts } from "@/data/sampleData";
+import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Download, FileText } from "lucide-react";
+import { Search, Download, FileText, RefreshCw, PenLine } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 }
 
+function downloadCSV(data: any[], filename: string) {
+  const headers = ['Lease ID', 'Client', 'Asset Type', 'Tenure', 'Monthly Rental', 'Total Value', 'Assets', 'Start', 'End', 'Status', 'Cost Center', 'Location', 'Return Status'];
+  const rows = data.map(c => [
+    c.contractNo, c.clientName, c.assetType, c.tenure, c.monthlyRental, c.totalValue, c.assetsCount, c.startDate, c.endDate, c.status, c.costCenter, c.location, c.returnStatus || ''
+  ]);
+  const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const Contracts = () => {
+  const { contracts } = useAppData();
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [selectedContract, setSelectedContract] = useState<typeof contracts[0] | null>(null);
+  const [selectedContract, setSelectedContract] = useState<any | null>(null);
+  const { toast } = useToast();
 
   const filtered = contracts.filter((c) => {
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
@@ -22,7 +40,7 @@ const Contracts = () => {
     return true;
   });
 
-  const generateRentalSchedule = (contract: typeof contracts[0]) => {
+  const generateRentalSchedule = (contract: any) => {
     const schedule = [];
     const monthlyPrincipal = contract.totalValue * 0.85 / contract.tenure;
     const monthlyInterest = contract.totalValue * 0.15 / contract.tenure;
@@ -33,14 +51,27 @@ const Contracts = () => {
     return schedule;
   };
 
+  const handleRenewal = (contractNo: string) => {
+    toast({ title: "Renewal Initiated", description: `Renewal request for ${contractNo} has been submitted to ORIX team.` });
+  };
+
+  const handleAmendment = (contractNo: string) => {
+    toast({ title: "Amendment Request", description: `Amendment request for ${contractNo} has been submitted. ORIX team will review shortly.` });
+  };
+
   return (
     <AppLayout>
-      <div className="page-header">
-        <h1 className="page-title">Lease Management</h1>
-        <p className="page-description">Manage lease contracts, renewals, rental schedules, and end-of-lease options</p>
+      <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="page-title">Lease Management</h1>
+          <p className="page-description">Manage lease contracts, renewals, rental schedules, and end-of-lease options</p>
+        </div>
+        <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'lease-contracts.csv')}>
+          <Download className="h-4 w-4" /> Download CSV
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="kpi-card">
           <p className="text-xs text-muted-foreground">Total Leases</p>
           <p className="text-2xl font-bold font-heading">{contracts.length}</p>
@@ -54,6 +85,10 @@ const Contracts = () => {
           <p className="text-2xl font-bold font-heading text-[hsl(var(--warning))]">{contracts.filter(c => c.status === 'Pending Renewal').length}</p>
         </div>
         <div className="kpi-card">
+          <p className="text-xs text-muted-foreground">Expired / Terminated</p>
+          <p className="text-2xl font-bold font-heading text-muted-foreground">{contracts.filter(c => c.status === 'Expired' || c.status === 'Terminated (Foreclosure)').length}</p>
+        </div>
+        <div className="kpi-card">
           <p className="text-xs text-muted-foreground">Total Lease Value</p>
           <p className="text-xl font-bold font-heading">{formatCurrency(contracts.reduce((s, c) => s + c.totalValue, 0))}</p>
         </div>
@@ -65,13 +100,13 @@ const Contracts = () => {
           <Input placeholder="Search leases..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 w-[170px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-[200px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="Active">Active</SelectItem>
             <SelectItem value="Pending Renewal">Pending Renewal</SelectItem>
             <SelectItem value="Expired">Expired</SelectItem>
-            <SelectItem value="Terminated">Terminated</SelectItem>
+            <SelectItem value="Terminated (Foreclosure)">Terminated (Foreclosure)</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -90,7 +125,8 @@ const Contracts = () => {
               <th>Start</th>
               <th>End</th>
               <th>Status</th>
-              <th>Schedule</th>
+              <th>Return Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -117,10 +153,27 @@ const Contracts = () => {
                     {c.status}
                   </span>
                 </td>
+                <td className="text-muted-foreground">
+                  {(c.status === 'Expired' || c.status === 'Terminated (Foreclosure)') ? (
+                    <span className={`status-badge ${c.returnStatus === 'Returned' ? 'status-active' : c.returnStatus === 'Pending Return' ? 'status-pending' : 'status-closed'}`}>
+                      {c.returnStatus || '—'}
+                    </span>
+                  ) : '—'}
+                </td>
                 <td>
-                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setSelectedContract(c)}>
-                    <Download className="h-3 w-3" /> Export
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {c.status === 'Pending Renewal' && (
+                      <Button variant="outline" size="sm" className="h-7 gap-1 text-xs text-success border-success/30 hover:bg-success/10" onClick={() => handleRenewal(c.contractNo)}>
+                        <RefreshCw className="h-3 w-3" /> Renew
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleAmendment(c.contractNo)}>
+                      <PenLine className="h-3 w-3" /> Amend
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setSelectedContract(c)}>
+                      <Download className="h-3 w-3" /> Rental Schedule
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -149,6 +202,11 @@ const Contracts = () => {
                 <div><span className="text-muted-foreground block">Start Date</span><span className="font-medium">{selectedContract.startDate}</span></div>
                 <div><span className="text-muted-foreground block">End Date</span><span className="font-medium">{selectedContract.endDate}</span></div>
                 <div><span className="text-muted-foreground block">Assets Count</span><span className="font-medium">{selectedContract.assetsCount}</span></div>
+                <div><span className="text-muted-foreground block">Cost Center</span><span className="font-medium">{selectedContract.costCenter}</span></div>
+                <div><span className="text-muted-foreground block">Location</span><span className="font-medium">{selectedContract.location}</span></div>
+                {selectedContract.returnStatus && (
+                  <div><span className="text-muted-foreground block">Return Status</span><span className="font-medium">{selectedContract.returnStatus}</span></div>
+                )}
               </div>
 
               <div>
@@ -185,14 +243,6 @@ const Contracts = () => {
                 <p className="text-xs text-muted-foreground mt-2">Showing first 12 months of {selectedContract.tenure} month tenure</p>
               </div>
 
-              <div>
-                <h3 className="font-heading font-semibold mb-2">End-of-Lease Options</h3>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">Buyout</Button>
-                  <Button variant="outline" size="sm">Return Assets</Button>
-                  <Button variant="outline" size="sm">Extend Lease</Button>
-                </div>
-              </div>
             </div>
           )}
         </DialogContent>

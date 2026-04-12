@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -43,15 +43,15 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --sidebar-background: 210 52% 15%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 199 89% 48%;
+    --sidebar-background: 354 100% 98%;
+    --sidebar-foreground: 210 50% 10%;
+    --sidebar-primary: 345 82% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 52% 20%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 40% 22%;
-    --sidebar-ring: 199 89% 48%;
-    --sidebar-muted: 210 30% 35%;
+    --sidebar-accent: 354 50% 92%;
+    --sidebar-accent-foreground: 210 50% 10%;
+    --sidebar-border: 354 30% 90%;
+    --sidebar-ring: 345 82% 44%;
+    --sidebar-muted: 210 15% 46%;
 
     --font-heading: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Inter', sans-serif;
