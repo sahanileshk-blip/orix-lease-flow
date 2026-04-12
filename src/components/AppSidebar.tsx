@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Car,
+  Monitor,
   FileText,
   Receipt,
   TicketPlus,
@@ -8,7 +9,8 @@ import {
   Bell,
   User,
   Users,
-  ChevronLeft,
+  Calculator,
+  LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -17,6 +19,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -24,11 +27,14 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
-const navItems = [
+const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Assets", url: "/assets", icon: Car },
-  { title: "Contracts & Leases", url: "/contracts", icon: FileText },
+  { title: "Vehicle Fleet", url: "/vehicles", icon: Car },
+  { title: "IT Assets", url: "/it-assets", icon: Monitor },
+  { title: "Lease Management", url: "/contracts", icon: FileText },
+  { title: "Quotes", url: "/quotes", icon: Calculator },
   { title: "Invoices", url: "/invoices", icon: Receipt },
   { title: "Service Requests", url: "/tickets", icon: TicketPlus },
   { title: "Documents", url: "/documents", icon: FolderOpen },
@@ -41,9 +47,10 @@ const adminItems = [
 ];
 
 export function AppSidebar() {
-  const { state, toggleSidebar } = useSidebar();
+  const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <Sidebar collapsible="icon">
@@ -56,7 +63,7 @@ export function AppSidebar() {
               </div>
               <div>
                 <p className="font-heading font-bold text-sm text-sidebar-foreground">ORIX India</p>
-                <p className="text-[10px] text-sidebar-muted">Lease & Asset Portal</p>
+                <p className="text-[10px] text-sidebar-muted">Customer Service Portal</p>
               </div>
             </div>
           )}
@@ -70,9 +77,10 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2 py-2">
         <SidebarGroup>
+          <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -91,44 +99,52 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          {!collapsed && (
-            <p className="px-3 py-2 text-[10px] uppercase tracking-wider text-sidebar-muted font-medium">
-              Admin
-            </p>
-          )}
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {adminItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span className="text-sm">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {user?.isAdmin && (
+          <SidebarGroup>
+            {!collapsed && (
+              <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            )}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                      >
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span className="text-sm">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border px-4 py-3">
-        {!collapsed && (
+        {!collapsed && user && (
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-medium text-sidebar-accent-foreground">
-              AK
+              {user.name.split(' ').map(n => n[0]).join('')}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-sidebar-foreground truncate">Admin Kumar</p>
-              <p className="text-[10px] text-sidebar-muted truncate">ORIX Admin</p>
+              <p className="text-xs font-medium text-sidebar-foreground truncate">{user.name}</p>
+              <p className="text-[10px] text-sidebar-muted truncate">{user.role}</p>
             </div>
+            <button onClick={logout} className="p-1.5 rounded hover:bg-sidebar-accent transition-colors" title="Sign out">
+              <LogOut className="h-3.5 w-3.5 text-sidebar-muted" />
+            </button>
           </div>
+        )}
+        {collapsed && user && (
+          <button onClick={logout} className="mx-auto p-1.5 rounded hover:bg-sidebar-accent transition-colors" title="Sign out">
+            <LogOut className="h-4 w-4 text-sidebar-muted" />
+          </button>
         )}
       </SidebarFooter>
     </Sidebar>

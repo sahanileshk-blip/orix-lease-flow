@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { notifications } from "@/data/sampleData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const [clientFilter, setClientFilter] = useState("all");
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const { user } = useAuth();
 
   return (
     <SidebarProvider>
@@ -22,22 +24,27 @@ export function AppLayout({ children }: AppLayoutProps) {
           <header className="h-14 flex items-center justify-between border-b bg-card px-4 shrink-0">
             <div className="flex items-center gap-3">
               <SidebarTrigger />
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Client:</span>
-                <Select value={clientFilter} onValueChange={setClientFilter}>
-                  <SelectTrigger className="h-8 w-[180px] text-xs">
-                    <SelectValue placeholder="All Clients" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Clients</SelectItem>
-                    <SelectItem value="c1">Tata Motors Ltd</SelectItem>
-                    <SelectItem value="c2">Infosys Technologies</SelectItem>
-                    <SelectItem value="c3">Reliance Industries</SelectItem>
-                    <SelectItem value="c4">Wipro Limited</SelectItem>
-                    <SelectItem value="c5">Mahindra & Mahindra</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {user?.isAdmin && (
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Client:</span>
+                  <Select value={clientFilter} onValueChange={setClientFilter}>
+                    <SelectTrigger className="h-8 w-[180px] text-xs">
+                      <SelectValue placeholder="All Clients" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Clients</SelectItem>
+                      <SelectItem value="c1">Tata Motors Ltd</SelectItem>
+                      <SelectItem value="c2">Infosys Technologies</SelectItem>
+                      <SelectItem value="c3">Reliance Industries</SelectItem>
+                      <SelectItem value="c4">Wipro Limited</SelectItem>
+                      <SelectItem value="c5">Mahindra & Mahindra</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {user && !user.isAdmin && (
+                <span className="text-xs text-muted-foreground hidden sm:block">{user.clientName}</span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Link to="/notifications" className="relative p-2 rounded-md hover:bg-muted transition-colors">
