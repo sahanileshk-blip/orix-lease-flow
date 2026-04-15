@@ -4,6 +4,7 @@ import {
   Monitor,
   FileText,
   Receipt,
+  FileBarChart,
   TicketPlus,
   FolderOpen,
   Bell,
@@ -35,11 +36,12 @@ const mainItems = [
   { title: "Vehicle Fleet", url: "/vehicles", icon: Car },
   { title: "IT Assets", url: "/it-assets", icon: Monitor },
   { title: "Lease Management", url: "/contracts", icon: FileText },
-  { title: "Quotes", url: "/quotes", icon: Calculator },
+  { title: "Create lease request", url: "/quotes", icon: Calculator },
   { title: "Invoices", url: "/invoices", icon: Receipt },
+  { title: "Custom Reports", url: "/reports", icon: FileBarChart },
   { title: "Service Requests", url: "/tickets", icon: TicketPlus },
   { title: "Documents", url: "/documents", icon: FolderOpen },
-  { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "Notifications", url: "/notifications", icon: Bell, state: { tab: 'settings' } },
   { title: "Profile", url: "/profile", icon: User },
   { title: "FAQ", url: "/faq", icon: HelpCircle },
 ];
@@ -49,13 +51,17 @@ const adminItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const { state, isMobile, setOpen } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
   const location = useLocation();
   const { user, logout } = useAuth();
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar
+      collapsible="icon"
+      onMouseEnter={() => !isMobile && setOpen(true)}
+      onMouseLeave={() => !isMobile && setOpen(false)}
+    >
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <div className="flex items-center justify-between">
           {!collapsed && (
@@ -87,8 +93,9 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
+                      state={item.state}
                       end={item.url === "/"}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                      className={`flex items-center rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors ${collapsed ? 'justify-center w-8 h-8 mx-auto' : 'gap-3 px-3 py-2 w-full'}`}
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -113,7 +120,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                        className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                        className={`flex items-center rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors ${collapsed ? 'justify-center w-8 h-8 mx-auto' : 'gap-3 px-3 py-2 w-full'}`}
                         activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                       >
                         <item.icon className="h-4 w-4 shrink-0" />

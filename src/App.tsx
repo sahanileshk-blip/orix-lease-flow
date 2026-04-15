@@ -4,6 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { FilterProvider } from "@/contexts/FilterContext";
+import { ReportProvider } from "@/contexts/ReportContext";
 import Dashboard from "./pages/Dashboard";
 import VehicleFleet from "./pages/VehicleFleet";
 import ITAssets from "./pages/ITAssets";
@@ -11,6 +14,7 @@ import Contracts from "./pages/Contracts";
 import Quotes from "./pages/Quotes";
 import Invoices from "./pages/Invoices";
 import Tickets from "./pages/Tickets";
+import Reports from "./pages/Reports";
 import Documents from "./pages/Documents";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
@@ -47,6 +51,7 @@ function AppRoutes() {
       <Route path="/quotes" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
       <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
       <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -60,15 +65,21 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <FilterProvider>
+          <ReportProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </ReportProvider>
+        </FilterProvider>
+      </ThemeProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

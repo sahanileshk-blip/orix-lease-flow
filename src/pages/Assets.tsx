@@ -1,27 +1,60 @@
-import { AppLayout } from "@/components/AppLayout";
-import { assets } from "@/data/sampleData";
+import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Input } from "@/components/ui/input";
-import { Car, Monitor, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Car, Monitor, Search, User, Download, Save } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFilter } from "@/contexts/FilterContext";
+import { SaveReportModal } from "@/components/SaveReportModal";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+
+function downloadCSV(data: any[], filename: string) {
+  const headers = ['Asset ID', 'Type', 'Description', 'Client', 'Location', 'Assigned To', 'Status', 'Lease End'];
+  const rows = data.map(a => [
+    a.assetTag, a.type, a.description, a.clientName, a.location, a.assignedTo, a.status, a.leaseEndDate
+  ]);
+  const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const Assets = () => {
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { assets } = useAppData();
+  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const { user } = useAuth();
 
   const filtered = assets.filter((a) => {
-    if (typeFilter !== "all" && a.type !== typeFilter) return false;
-    if (statusFilter !== "all" && a.status !== statusFilter) return false;
+    if (typeFilter.length > 0 && !typeFilter.includes(a.type)) return false;
+    if (statusFilter.length > 0 && !statusFilter.includes(a.status)) return false;
     if (search && !a.description.toLowerCase().includes(search.toLowerCase()) && !a.assetTag.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
   return (
     <AppLayout>
-      <div className="page-header">
-        <h1 className="page-title">Asset Management</h1>
-        <p className="page-description">Manage vehicles and IT assets across all clients</p>
+      <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="page-title">Asset Management</h1>
+          <p className="page-description">Manage vehicles and IT assets across all clients</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
+            <Save className="h-4 w-4" /> Save Custom Report
+          </Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'assets.csv')}>
+            <Download className="h-4 w-4" /> Download CSV
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -66,24 +99,28 @@ const Assets = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search assets..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Type" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="Vehicle">Vehicle</SelectItem>
-            <SelectItem value="IT">IT Asset</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Active">Active</SelectItem>
-            <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
-            <SelectItem value="In Transit">In Transit</SelectItem>
-            <SelectItem value="Disposed">Disposed</SelectItem>
-          </SelectContent>
-        </Select>
+        <MultiSelect
+          placeholder="Type"
+          className="w-[140px]"
+          selected={typeFilter}
+          onChange={setTypeFilter}
+          options={[
+            { label: "Vehicle", value: "Vehicle" },
+            { label: "IT Asset", value: "IT" },
+          ]}
+        />
+        <MultiSelect
+          placeholder="Status"
+          className="w-[175px]"
+          selected={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { label: "Active", value: "Active" },
+            { label: "Under Maintenance", value: "Under Maintenance" },
+            { label: "In Transit", value: "In Transit" },
+            { label: "Disposed", value: "Disposed" },
+          ]}
+        />
       </div>
 
       {/* Table */}
@@ -91,10 +128,10 @@ const Assets = () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Asset Tag</th>
+              <th>Asset ID</th>
               <th>Type</th>
               <th>Description</th>
-              <th>Client</th>
+              {user?.isAdmin && <th>Client</th>}
               <th>Location</th>
               <th>Assigned To</th>
               <th>Status</th>
@@ -112,9 +149,36 @@ const Assets = () => {
                   </span>
                 </td>
                 <td>{a.description}</td>
-                <td className="text-muted-foreground">{a.clientName}</td>
+                {user?.isAdmin && <td className="text-muted-foreground">{a.clientName}</td>}
                 <td>{a.location}</td>
-                <td>{a.assignedTo}</td>
+                <td>
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <button className="text-primary hover:underline font-medium text-left">
+                        {a.assignedTo}
+                      </button>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <div className="flex justify-between space-x-4">
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-semibold flex items-center gap-1.5"><User className="h-4 w-4" /> {a.assignedTo}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {a.type === 'Vehicle' ? 'Assigned Driver / POC' : 'Asset Assigned User'}
+                          </p>
+                          <div className="flex items-center pt-2">
+                            <span className="text-xs text-muted-foreground">
+                              {a.type === 'Vehicle' ? (
+                                <>Driver: {a.driver || a.assignedTo} <br /> Registration: {a.registrationNo}</>
+                              ) : (
+                                <>Category: {a.category} <br /> Serial: {a.serialNo}</>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                </td>
                 <td>
                   <span className={`status-badge ${a.status === 'Active' ? 'status-active' : a.status === 'Under Maintenance' ? 'status-pending' : 'status-closed'}`}>
                     {a.status}
@@ -129,6 +193,7 @@ const Assets = () => {
           <p className="text-center py-8 text-muted-foreground text-sm">No assets found matching filters</p>
         )}
       </div>
+      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Assets" activeFilters={{ search, type: typeFilter.join(','), status: statusFilter.join(','), client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
     </AppLayout>
   );
 };

@@ -1,15 +1,17 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Monitor, Search, Cpu, HardDrive, Download } from "lucide-react";
+import { Monitor, Search, Cpu, HardDrive, Download, Save } from "lucide-react";
+import { SaveReportModal } from "@/components/SaveReportModal";
+import { useFilter } from "@/contexts/FilterContext";
 
 function downloadCSV(data: any[], filename: string) {
-  const headers = ['Asset Tag', 'Serial No', 'Description', 'Category', 'Client', 'Assigned To', 'Condition', 'Location', 'Cost Center', 'Lease Expiry', 'Status'];
+  const headers = ['Asset ID', 'Serial No', 'Description', 'Category', 'Client', 'Assigned To', 'Condition', 'Lease Status', 'Location', 'Cost Center', 'Lease Expiry'];
   const rows = data.map(a => [
-    a.assetTag, a.serialNo || '', a.description, a.category || '', a.clientName, a.assignedTo, a.condition || '', a.location, a.costCenter, a.leaseEndDate, a.status
+    a.assetTag, a.serialNo || '', a.description, a.category || '', a.clientName, a.assignedTo, a.condition || '', a.leaseStatus, a.location, a.costCenter, a.leaseEndDate
   ]);
   const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -23,14 +25,14 @@ function downloadCSV(data: any[], filename: string) {
 
 const ITAssets = () => {
   const { assets } = useAppData();
+  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
   const itAssets = assets.filter(a => a.type === 'IT');
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const filtered = itAssets.filter((a) => {
-    if (statusFilter !== "all" && a.status !== statusFilter) return false;
-    if (categoryFilter !== "all" && a.category !== categoryFilter) return false;
+    if (categoryFilter.length > 0 && !categoryFilter.includes(a.category || '')) return false;
     if (search && !a.description.toLowerCase().includes(search.toLowerCase()) && !a.assetTag.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -42,9 +44,14 @@ const ITAssets = () => {
           <h1 className="page-title">IT Asset Management</h1>
           <p className="page-description">Track hardware and software assets, allocation, and compliance</p>
         </div>
-        <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'it-assets.csv')}>
-          <Download className="h-4 w-4" /> Download CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
+            <Save className="h-4 w-4" /> Save Custom Report
+          </Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'it-assets.csv')}>
+            <Download className="h-4 w-4" /> Download CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -72,10 +79,10 @@ const ITAssets = () => {
           </div>
         </div>
         <div className="kpi-card flex items-center gap-3">
-          <div className="h-2 w-2 rounded-full bg-success mr-1" />
+          <Monitor className="h-5 w-5 text-muted-foreground" />
           <div>
-            <p className="text-xs text-muted-foreground">Active</p>
-            <p className="text-xl font-bold font-heading">{itAssets.filter(a => a.status === 'Active').length}</p>
+            <p className="text-xs text-muted-foreground">Other</p>
+            <p className="text-xl font-bold font-heading">{itAssets.filter(a => a.category !== 'Laptop' && a.category !== 'Desktop').length}</p>
           </div>
         </div>
       </div>
@@ -85,41 +92,34 @@ const ITAssets = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search IT assets..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Category" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="Laptop">Laptop</SelectItem>
-            <SelectItem value="Desktop">Desktop</SelectItem>
-            <SelectItem value="Software">Software</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Active">Active</SelectItem>
-            <SelectItem value="Under Maintenance">Maintenance</SelectItem>
-            <SelectItem value="Disposed">Disposed</SelectItem>
-          </SelectContent>
-        </Select>
+        <MultiSelect
+          placeholder="Category"
+          className="w-[150px]"
+          selected={categoryFilter}
+          onChange={setCategoryFilter}
+          options={[
+            { label: "Laptop", value: "Laptop" },
+            { label: "Desktop", value: "Desktop" },
+            { label: "Other", value: "Other" },
+          ]}
+        />
       </div>
 
       <div className="bg-card rounded-lg border overflow-x-auto">
         <table className="data-table">
           <thead>
             <tr>
-              <th>Asset Tag</th>
+              <th>Asset ID</th>
               <th>Serial No.</th>
               <th>Description</th>
               <th>Category</th>
               <th>Client</th>
               <th>Assigned To</th>
               <th>Condition</th>
+              <th>Lease Status</th>
               <th>Location</th>
               <th>Cost Center</th>
               <th>Lease Expiry</th>
-              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -136,14 +136,14 @@ const ITAssets = () => {
                     {a.condition}
                   </span>
                 </td>
+                <td>
+                  <span className={`status-badge ${a.leaseStatus === 'Disbursed' ? 'status-active' : a.leaseStatus === 'Partially Disbursed' ? 'status-pending' : 'status-overdue'}`}>
+                    {a.leaseStatus}
+                  </span>
+                </td>
                 <td>{a.location}</td>
                 <td className="text-muted-foreground">{a.costCenter}</td>
                 <td className="text-muted-foreground">{a.leaseEndDate}</td>
-                <td>
-                  <span className={`status-badge ${a.status === 'Active' ? 'status-active' : a.status === 'Under Maintenance' ? 'status-pending' : 'status-closed'}`}>
-                    {a.status}
-                  </span>
-                </td>
               </tr>
             ))}
           </tbody>
@@ -152,6 +152,7 @@ const ITAssets = () => {
           <p className="text-center py-8 text-muted-foreground text-sm">No IT assets found</p>
         )}
       </div>
+      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="IT Assets" activeFilters={{ search, category: categoryFilter.join(','), client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
     </AppLayout>
   );
 };

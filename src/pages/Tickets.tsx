@@ -1,15 +1,18 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Star, ExternalLink, SmilePlus, Download, PenLine } from "lucide-react";
+import { Search, Plus, Star, Download, SmilePlus, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFilter } from "@/contexts/FilterContext";
+import { SaveReportModal } from "@/components/SaveReportModal";
 
 function downloadCSV(data: any[], filename: string) {
   const headers = ['Ticket No', 'Category', 'Subject', 'Client', 'Priority', 'Status', 'Created', 'SLA Deadline', 'Assigned To', 'Cost Center', 'Location', 'Rating', 'CSAT'];
@@ -28,10 +31,14 @@ function downloadCSV(data: any[], filename: string) {
 
 const Tickets = () => {
   const { tickets } = useAppData();
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [priorityFilter, setPriorityFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [description, setDescription] = useState("");
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [newStatus, setNewStatus] = useState("Open");
@@ -41,8 +48,9 @@ const Tickets = () => {
   const { user } = useAuth();
 
   const filtered = tickets.filter((t) => {
-    if (statusFilter !== "all" && t.status !== statusFilter) return false;
-    if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
+    if (statusFilter.length > 0 && !statusFilter.includes(t.status)) return false;
+    if (categoryFilter.length > 0 && !categoryFilter.includes(t.category)) return false;
+    if (priorityFilter.length > 0 && !priorityFilter.includes(t.priority)) return false;
     if (search && !t.subject.toLowerCase().includes(search.toLowerCase()) && !t.ticketNo.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -53,8 +61,13 @@ const Tickets = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!description.trim()) {
+      toast({ title: "Validation Error", description: "Description is mandatory.", variant: "destructive" });
+      return;
+    }
     setDialogOpen(false);
     toast({ title: "Ticket Created", description: "Your service request has been submitted successfully." });
+    setDescription("");
   };
 
   const openUpdateDialog = (t: any) => {
@@ -95,6 +108,9 @@ const Tickets = () => {
           <p className="page-description">Create and track service tickets with SLA tracking</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
+            <Save className="h-4 w-4" /> Save Custom Report
+          </Button>
           <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'service-requests.csv')}>
             <Download className="h-4 w-4" /> Download CSV
           </Button>
@@ -107,36 +123,60 @@ const Tickets = () => {
                 <DialogTitle>Create Service Request</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select defaultValue="Vehicle">
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Vehicle">Vehicle</SelectItem>
-                      <SelectItem value="IT">IT Asset</SelectItem>
-                      <SelectItem value="Lease">Lease</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select defaultValue="Vehicle">
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IT">IT</SelectItem>
+                        <SelectItem value="Vehicle">Vehicle</SelectItem>
+                        <SelectItem value="Invoice">Invoice</SelectItem>
+                        <SelectItem value="Finance">Finance</SelectItem>
+                        <SelectItem value="General">General</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Request Type</Label>
+                    <Select defaultValue="Service Request">
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New Request">New Request</SelectItem>
+                        <SelectItem value="Service Request">Service Request</SelectItem>
+                        <SelectItem value="Closure Request">Closure Request</SelectItem>
+                        <SelectItem value="Report Breakdown">Report Breakdown</SelectItem>
+                        <SelectItem value="Report Stolen Item">Report Stolen Item</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Priority</Label>
-                  <Select defaultValue="Medium">
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Critical">Critical</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Asset ID / Lease ID (Optional)</Label>
+                    <Input placeholder="e.g. VH-001 or OL-2024-001" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Priority</Label>
+                    <Select defaultValue="Medium">
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Low">Low</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Subject</Label>
                   <Input placeholder="Brief description of the issue" required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea placeholder="Provide detailed information..." rows={4} />
+                  <Label>Description <span className="text-destructive">*</span></Label>
+                  <Textarea placeholder="Provide detailed information..." rows={4} required value={description} onChange={e => setDescription(e.target.value)} />
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
@@ -158,22 +198,26 @@ const Tickets = () => {
           <p className="text-xs text-muted-foreground">Open / In Progress</p>
           <p className="text-2xl font-bold font-heading text-warning">{tickets.filter(t => t.status === 'Open' || t.status === 'In Progress').length}</p>
         </div>
-        <div className="kpi-card flex items-center gap-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Avg. Rating</p>
-            <p className="text-2xl font-bold font-heading">{avgRating}</p>
-            <div className="mt-1">{closedTickets.length > 0 && renderStars(Math.round(parseFloat(avgRating as string)))}</div>
-          </div>
-          <Star className="h-6 w-6 text-warning fill-warning shrink-0" />
-        </div>
-        <div className="kpi-card flex items-center gap-3">
-          <div>
-            <p className="text-xs text-muted-foreground">CSAT Score</p>
-            <p className="text-2xl font-bold font-heading text-success">{avgCSAT}%</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">from {closedTickets.length} closed tickets</p>
-          </div>
-          <SmilePlus className="h-6 w-6 text-success shrink-0" />
-        </div>
+        {user?.isAdmin && (
+          <>
+            <div className="kpi-card flex items-center gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Avg. Rating</p>
+                <p className="text-2xl font-bold font-heading">{avgRating}</p>
+                <div className="mt-1">{closedTickets.length > 0 && renderStars(Math.round(parseFloat(avgRating as string)))}</div>
+              </div>
+              <Star className="h-6 w-6 text-warning fill-warning shrink-0" />
+            </div>
+            <div className="kpi-card flex items-center gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground">CSAT Score</p>
+                <p className="text-2xl font-bold font-heading text-success">{avgCSAT}%</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">from {closedTickets.length} closed tickets</p>
+              </div>
+              <SmilePlus className="h-6 w-6 text-success shrink-0" />
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
@@ -181,25 +225,40 @@ const Tickets = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search tickets..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Open">Open</SelectItem>
-            <SelectItem value="In Progress">In Progress</SelectItem>
-            <SelectItem value="Resolved">Resolved</SelectItem>
-            <SelectItem value="Closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Category" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="Vehicle">Vehicle</SelectItem>
-            <SelectItem value="IT">IT</SelectItem>
-            <SelectItem value="Lease">Lease</SelectItem>
-          </SelectContent>
-        </Select>
+        <MultiSelect
+          placeholder="Status"
+          className="w-[150px]"
+          selected={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { label: "Open", value: "Open" },
+            { label: "In Progress", value: "In Progress" },
+            { label: "Resolved", value: "Resolved" },
+            { label: "Closed", value: "Closed" },
+          ]}
+        />
+        <MultiSelect
+          placeholder="Category"
+          className="w-[150px]"
+          selected={categoryFilter}
+          onChange={setCategoryFilter}
+          options={[
+            { label: "Vehicle", value: "Vehicle" },
+            { label: "IT", value: "IT" },
+            { label: "Lease", value: "Lease" },
+          ]}
+        />
+        <MultiSelect
+          placeholder="Priority"
+          className="w-[140px]"
+          selected={priorityFilter}
+          onChange={setPriorityFilter}
+          options={[
+            { label: "High", value: "High" },
+            { label: "Medium", value: "Medium" },
+            { label: "Low", value: "Low" },
+          ]}
+        />
       </div>
 
       <div className="bg-card rounded-lg border overflow-x-auto">
@@ -209,37 +268,33 @@ const Tickets = () => {
               <th>Ticket No.</th>
               <th>Category</th>
               <th>Subject</th>
-              <th>Client</th>
+              {user?.isAdmin && <th>Client</th>}
               <th>Priority</th>
               <th>Status</th>
               <th>Created</th>
               <th>SLA Deadline</th>
               <th>Assigned To</th>
-              <th>Rating</th>
-              {user?.isAdmin && <th>Action</th>}
+              {user?.isAdmin && <th>Rating</th>}
             </tr>
           </thead>
           <tbody>
             {filtered.map((t) => (
               <tr key={t.id}>
                 <td className="font-medium">
-                  {user?.isAdmin && t.externalLink ? (
-                    <a
-                      href={t.externalLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex items-center gap-1"
+                  {user?.isAdmin ? (
+                    <button
+                      onClick={() => openUpdateDialog(t)}
+                      className="text-primary hover:underline inline-flex items-center gap-1 font-medium bg-transparent border-none p-0 cursor-pointer"
                     >
                       {t.ticketNo}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                    </button>
                   ) : (
                     t.ticketNo
                   )}
                 </td>
                 <td>{t.category}</td>
                 <td>{t.subject}</td>
-                <td className="text-muted-foreground">{t.clientName}</td>
+                {user?.isAdmin && <td className="text-muted-foreground">{t.clientName}</td>}
                 <td>
                   <span className={`status-badge ${t.priority === 'Critical' ? 'status-overdue' : t.priority === 'High' ? 'status-pending' : t.priority === 'Medium' ? 'status-active' : 'status-closed'}`}>
                     {t.priority}
@@ -253,25 +308,20 @@ const Tickets = () => {
                 <td className="text-muted-foreground">{t.createdAt}</td>
                 <td className="text-muted-foreground">{t.slaDeadline}</td>
                 <td>{t.assignedTo}</td>
-                <td>
-                  {t.status === 'Closed' && t.rating ? (
-                    <div className="flex flex-col gap-0.5">
-                      {renderStars(t.rating)}
-                      {t.csatScore !== undefined && (
-                        <span className="text-[10px] text-muted-foreground">CSAT {t.csatScore}%</span>
-                      )}
-                    </div>
-                  ) : t.status === 'Closed' ? (
-                    <span className="text-xs text-muted-foreground">No rating</span>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </td>
                 {user?.isAdmin && (
                   <td>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => openUpdateDialog(t)}>
-                      <PenLine className="h-3.5 w-3.5" /> Update
-                    </Button>
+                    {t.status === 'Closed' && t.rating ? (
+                      <div className="flex flex-col gap-0.5">
+                        {renderStars(t.rating)}
+                        {t.csatScore !== undefined && (
+                          <span className="text-[10px] text-muted-foreground">CSAT {t.csatScore}%</span>
+                        )}
+                      </div>
+                    ) : t.status === 'Closed' ? (
+                      <span className="text-xs text-muted-foreground">No rating</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </td>
                 )}
               </tr>
@@ -320,6 +370,7 @@ const Tickets = () => {
           </form>
         </DialogContent>
       </Dialog>
+      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Service Requests" activeFilters={{ search, status: statusFilter.join(','), category: categoryFilter.join(','), priority: priorityFilter.join(','), client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
     </AppLayout>
   );
 };

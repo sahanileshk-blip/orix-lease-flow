@@ -5,19 +5,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SaveReportModal } from "@/components/SaveReportModal";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Search, Download, MessageSquarePlus } from "lucide-react";
+import { Search, Download, MessageSquarePlus, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useFilter } from "@/contexts/FilterContext";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 }
 
 function downloadCSV(data: any[], filename: string) {
-  const headers = ['Invoice No', 'Client', 'Contract', 'Amount', 'Due Date', 'Paid Date', 'Status', 'Cost Center', 'Location', 'Remarks'];
+  const headers = ['Invoice No', 'Client', 'Lease ID', 'Location', 'Cost Center', 'Amount', 'Due Date', 'Paid Date', 'Status'];
   const rows = data.map(i => [
-    i.invoiceNo, i.clientName, i.contractNo, i.amount, i.dueDate, i.paidDate || '', i.status, i.costCenter, i.location, i.remarks || ''
+    i.invoiceNo, i.clientName, i.contractNo, i.location, i.costCenter, i.amount, i.dueDate, i.paidDate || '', i.status
   ]);
   const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -31,16 +37,19 @@ function downloadCSV(data: any[], filename: string) {
 
 const Invoices = () => {
   const { invoices } = useAppData();
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
-  const [remarkText, setRemarkText] = useState("");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const filtered = invoices.filter((inv) => {
-    if (statusFilter !== "all" && inv.status !== statusFilter) return false;
+    if (statusFilter.length > 0 && !statusFilter.includes(inv.status)) return false;
     if (search && !inv.invoiceNo.toLowerCase().includes(search.toLowerCase()) && !inv.clientName.toLowerCase().includes(search.toLowerCase())) return false;
+    if (dateRange.start && inv.dueDate < dateRange.start) return false;
+    if (dateRange.end && inv.dueDate > dateRange.end) return false;
     return true;
   });
 
@@ -48,17 +57,40 @@ const Invoices = () => {
   const totalPending = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + i.amount, 0);
   const totalOverdue = invoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + i.amount, 0);
 
-  const openRemarkDialog = (inv: any) => {
-    setSelectedInvoice(inv);
-    setRemarkText(inv.remarks || "");
-    setRemarkDialogOpen(true);
-  };
+  const handleDownloadInvoice = (inv: any) => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.text("INVOICE", 14, 22);
+    
+    doc.setFontSize(10);
+    doc.text(`Invoice No: ${inv.invoiceNo}`, 14, 30);
+    doc.text(`Date: ${inv.generatedDate}`, 14, 35);
+    doc.text(`Due Date: ${inv.dueDate}`, 14, 40);
+    
+    doc.text("BILLED TO:", 14, 50);
+    doc.text(`${inv.clientName}`, 14, 55);
+    doc.text(`Lease ID: ${inv.contractNo}`, 14, 60);
 
-  const handleSaveRemark = () => {
-    setRemarkDialogOpen(false);
-    toast({ title: "Remark Saved", description: `Remark for ${selectedInvoice?.invoiceNo} has been submitted to ORIX finance team.` });
-    setSelectedInvoice(null);
-    setRemarkText("");
+    const baseCost = inv.amount / 1.18;
+    const gstCost = inv.amount - baseCost;
+
+    autoTable(doc, {
+      startY: 70,
+      head: [['Description', 'Amount (INR)']],
+      body: [
+        ['Base Rental', formatCurrency(baseCost)],
+        ['GST (18%)', formatCurrency(gstCost)],
+        ['Total', formatCurrency(inv.amount)],
+      ],
+      theme: 'grid',
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || 100;
+    doc.text(`Status: ${inv.status.toUpperCase()}`, 14, finalY + 10);
+    
+    doc.save(`Invoice_${inv.invoiceNo}.pdf`);
+    toast({ title: "Connecting to server...", description: `Downloading ${inv.invoiceNo}` });
   };
 
   return (
@@ -66,11 +98,16 @@ const Invoices = () => {
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="page-title">Invoices & Payments</h1>
-          <p className="page-description">Track invoices, payments, and overdue balances</p>
+          <p className="page-description">Track lease invoices, payments, and outstanding dues</p>
         </div>
-        <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'invoices.csv')}>
-          <Download className="h-4 w-4" /> Download CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
+            <Save className="h-4 w-4" /> Save Custom Report
+          </Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'invoices.csv')}>
+            <Download className="h-4 w-4" /> Download CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -93,15 +130,22 @@ const Invoices = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search invoices..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Paid">Paid</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Overdue">Overdue</SelectItem>
-          </SelectContent>
-        </Select>
+        <MultiSelect
+          placeholder="Status"
+          className="w-[160px]"
+          selected={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { label: "Paid", value: "Paid" },
+            { label: "Pending", value: "Pending" },
+            { label: "Overdue", value: "Overdue" },
+          ]}
+        />
+        <div className="flex items-center gap-2">
+          <Input type="date" value={dateRange.start} onChange={(e) => setDateRange({...dateRange, start: e.target.value})} className="h-9 text-xs" title="From Date (Due Date)" />
+          <span className="text-muted-foreground text-xs">to</span>
+          <Input type="date" value={dateRange.end} onChange={(e) => setDateRange({...dateRange, end: e.target.value})} className="h-9 text-xs" title="To Date (Due Date)" />
+        </div>
       </div>
 
       <div className="bg-card rounded-lg border overflow-x-auto">
@@ -109,23 +153,34 @@ const Invoices = () => {
           <thead>
             <tr>
               <th>Invoice No.</th>
-              <th>Client</th>
-              <th>Contract</th>
-              <th>Amount</th>
+              {user?.isAdmin && <th>Client</th>}
+              <th>Lease ID</th>
+              <th>Location</th>
+              <th>Cost Center</th>
+              <th>Generated Date</th>
+              <th>Amount Breakup</th>
               <th>Due Date</th>
               <th>Paid Date</th>
               <th>Status</th>
-              <th>Remarks</th>
-              <th>Action</th>
+              <th>Download Invoice</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((inv) => (
               <tr key={inv.id}>
                 <td className="font-medium">{inv.invoiceNo}</td>
-                <td>{inv.clientName}</td>
+                {user?.isAdmin && <td>{inv.clientName}</td>}
                 <td className="text-muted-foreground">{inv.contractNo}</td>
-                <td>{formatCurrency(inv.amount)}</td>
+                <td>{inv.location}</td>
+                <td className="text-muted-foreground">{inv.costCenter}</td>
+                <td>{inv.generatedDate}</td>
+                <td>
+                  <div className="flex flex-col text-xs space-y-0.5">
+                    <span className="text-muted-foreground">Base: {formatCurrency(inv.amount / 1.18)}</span>
+                    <span className="text-muted-foreground">GST: {formatCurrency(inv.amount - (inv.amount / 1.18))}</span>
+                    <span className="font-medium text-sm mt-0.5">{formatCurrency(inv.amount)}</span>
+                  </div>
+                </td>
                 <td>{inv.dueDate}</td>
                 <td className="text-muted-foreground">{inv.paidDate || '—'}</td>
                 <td>
@@ -134,17 +189,8 @@ const Invoices = () => {
                   </span>
                 </td>
                 <td>
-                  {inv.remarks ? (
-                    <span className="text-xs text-destructive max-w-[150px] truncate block" title={inv.remarks}>
-                      ⚠ {inv.remarks}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </td>
-                <td>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary" onClick={() => handleDownloadInvoice(inv)}>
                       <Download className="h-3.5 w-3.5" /> PDF
                     </Button>
                   </div>
@@ -154,35 +200,7 @@ const Invoices = () => {
           </tbody>
         </table>
       </div>
-
-      {/* Remark Dialog */}
-      <Dialog open={remarkDialogOpen} onOpenChange={setRemarkDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Invoice Remark — {selectedInvoice?.invoiceNo}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="text-sm space-y-1">
-              <p><span className="text-muted-foreground">Client:</span> {selectedInvoice?.clientName}</p>
-              <p><span className="text-muted-foreground">Amount:</span> {selectedInvoice ? formatCurrency(selectedInvoice.amount) : ''}</p>
-              <p><span className="text-muted-foreground">Status:</span> {selectedInvoice?.status}</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Remarks / Disagreement Details</Label>
-              <Textarea
-                placeholder="Enter your remarks regarding this invoice (e.g., amount mismatch, disputed charges, etc.)..."
-                value={remarkText}
-                onChange={(e) => setRemarkText(e.target.value)}
-                rows={4}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveRemark}>Submit Remark</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Invoices" activeFilters={{ search, status: statusFilter.join(','), "start_date": dateRange.start, "end_date": dateRange.end, client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
     </AppLayout>
   );
 };

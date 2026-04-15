@@ -57,6 +57,43 @@
     --font-body: 'Inter', sans-serif;
   }
 
+  /* Qualtech Edge Theme */
+  :root[data-theme="c1"] {
+    --primary: 154 85% 42%; /* Spring Green / Mint / #12C979 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 100% 20%; /* Corporate Navy Blue */
+    --secondary-foreground: 0 0% 100%;
+    --sidebar-background: 210 100% 20%; /* Deep Navy Sidebar */
+    --sidebar-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 210 80% 30%;
+    --sidebar-accent-foreground: 154 85% 42%; /* Highlight with Spring Green */
+    --sidebar-primary: 154 85% 42%; /* Gold Icon select -> Spring Green Icon Select */
+    --sidebar-primary-foreground: 210 100% 20%;
+    --sidebar-border: 210 80% 30%;
+    --sidebar-muted: 210 50% 60%;
+    --ring: 154 85% 42%;
+  }
+
+  /* Reliance Industries Theme */
+  :root[data-theme="c3"] {
+    --primary: 220 60% 10%; /* Deep Blue/Black */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 100% 50%; /* Gold */
+    --secondary-foreground: 220 60% 10%;
+    --background: 210 20% 98%;
+    --accent: 45 100% 50%; /* Gold */
+    --accent-foreground: 220 60% 10%;
+    --sidebar-background: 220 60% 10%; /* Deep Blue */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 45 100% 50%; /* Gold Icon select */
+    --sidebar-primary-foreground: 220 60% 10%;
+    --sidebar-accent: 220 40% 20%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 40% 20%;
+    --sidebar-muted: 220 20% 60%;
+    --ring: 45 100% 50%;
+  }
+
   .dark {
     --background: 210 50% 5%;
     --foreground: 210 20% 95%;
@@ -86,6 +123,63 @@
     --sidebar-border: 210 30% 15%;
     --sidebar-ring: 199 89% 48%;
   }
+
+  /* Qualtech Edge (c1) dark mode: preserve branded sidebar, keep dark content area */
+  .dark[data-theme="c1"] {
+    --background: 210 50% 5%;
+    --foreground: 210 20% 95%;
+    --card: 210 50% 8%;
+    --card-foreground: 210 20% 95%;
+    --popover: 210 50% 8%;
+    --popover-foreground: 210 20% 95%;
+    --secondary: 210 40% 15%;
+    --secondary-foreground: 210 20% 90%;
+    --muted: 210 30% 15%;
+    --muted-foreground: 210 15% 55%;
+    --border: 210 30% 18%;
+    --input: 210 30% 18%;
+    /* Keep c1 branded sidebar & primary */
+    --primary: 154 85% 42%;
+    --primary-foreground: 0 0% 100%;
+    --sidebar-background: 210 100% 20%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-accent: 210 80% 30%;
+    --sidebar-accent-foreground: 154 85% 42%;
+    --sidebar-primary: 154 85% 42%;
+    --sidebar-primary-foreground: 210 100% 20%;
+    --sidebar-border: 210 80% 30%;
+    --sidebar-muted: 210 50% 60%;
+  }
+
+  /* Reliance Industries (c3) dark mode: preserve branded sidebar, keep dark content area */
+  .dark[data-theme="c3"] {
+    --background: 220 30% 8%;
+    --foreground: 0 0% 95%;
+    --card: 220 30% 11%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 30% 11%;
+    --popover-foreground: 0 0% 95%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 220 20% 15%;
+    --muted-foreground: 220 10% 55%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    /* Keep c3 branded sidebar & accent (gold) */
+    --primary: 220 60% 10%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 220 60% 10%;
+    --ring: 45 100% 50%;
+    --sidebar-background: 220 60% 10%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 220 60% 10%;
+    --sidebar-accent: 220 40% 20%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 40% 20%;
+    --sidebar-muted: 220 20% 60%;
+  }
 }
 
 @layer base {
@@ -100,6 +194,23 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
   }
+}
+
+/* Dark mode – force component surfaces to respect CSS vars across all themes */
+.dark [data-radix-select-trigger],
+.dark [data-radix-select-content],
+.dark [cmdk-root],
+.dark [cmdk-list],
+.dark [cmdk-item] {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.dark button[role="combobox"] {
+  background-color: hsl(var(--background));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
 }
 
 @layer components {

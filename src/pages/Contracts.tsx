@@ -1,12 +1,15 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Download, FileText, RefreshCw, PenLine } from "lucide-react";
+import { Search, Download, FileText, RefreshCw, PenLine, Save } from "lucide-react";
+import { SaveReportModal } from "@/components/SaveReportModal";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFilter } from "@/contexts/FilterContext";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
@@ -28,15 +31,41 @@ function downloadCSV(data: any[], filename: string) {
 }
 
 const Contracts = () => {
-  const { contracts } = useAppData();
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { rawContracts } = useAppData();
+  const { leaseStatusFilter } = useFilter();
+  const [periodFilter, setPeriodFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<any | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const filtered = contracts.filter((c) => {
-    if (statusFilter !== "all" && c.status !== statusFilter) return false;
+  const filtered = rawContracts.filter((c) => {
     if (search && !c.contractNo.toLowerCase().includes(search.toLowerCase()) && !c.clientName.toLowerCase().includes(search.toLowerCase())) return false;
+
+    if (periodFilter !== "") {
+      const sDate = new Date(c.startDate);
+      const eDate = new Date(c.endDate);
+      let overlaps = false;
+      const targetYear = parseInt(periodFilter.split('-')[0]);
+      const targetMonth = parseInt(periodFilter.split('-')[1]);
+
+      let temp = new Date(sDate.getFullYear(), sDate.getMonth(), 1);
+      const endTarget = new Date(eDate.getFullYear(), eDate.getMonth(), 1);
+
+      while (temp <= endTarget) {
+        const y = temp.getFullYear();
+        const m = temp.getMonth() + 1;
+
+        if (targetYear === y && targetMonth === m) {
+          overlaps = true;
+          break;
+        }
+        temp.setMonth(temp.getMonth() + 1);
+      }
+      if (!overlaps) return false;
+    }
+
     return true;
   });
 
@@ -51,8 +80,8 @@ const Contracts = () => {
     return schedule;
   };
 
-  const handleRenewal = (contractNo: string) => {
-    toast({ title: "Renewal Initiated", description: `Renewal request for ${contractNo} has been submitted to ORIX team.` });
+  const handleExtension = (contractNo: string) => {
+    toast({ title: "Extension Initiated", description: `Extension request for ${contractNo} has been submitted to ORIX team.` });
   };
 
   const handleAmendment = (contractNo: string) => {
@@ -64,33 +93,38 @@ const Contracts = () => {
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="page-title">Lease Management</h1>
-          <p className="page-description">Manage lease contracts, renewals, rental schedules, and end-of-lease options</p>
+          <p className="page-description">Overview of active contracts, renewals, and closures</p>
         </div>
-        <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'lease-contracts.csv')}>
-          <Download className="h-4 w-4" /> Download CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
+            <Save className="h-4 w-4" /> Save Custom Report
+          </Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'contracts.csv')}>
+            <Download className="h-4 w-4" /> Download CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="kpi-card">
           <p className="text-xs text-muted-foreground">Total Leases</p>
-          <p className="text-2xl font-bold font-heading">{contracts.length}</p>
+          <p className="text-2xl font-bold font-heading">{filtered.length}</p>
         </div>
         <div className="kpi-card">
-          <p className="text-xs text-muted-foreground">Active</p>
-          <p className="text-2xl font-bold font-heading text-[hsl(var(--success))]">{contracts.filter(c => c.status === 'Active').length}</p>
+          <p className="text-xs text-muted-foreground">Disbursed</p>
+          <p className="text-2xl font-bold font-heading text-[hsl(var(--success))]">{filtered.filter(c => c.status === 'Disbursed').length}</p>
         </div>
         <div className="kpi-card">
-          <p className="text-xs text-muted-foreground">Pending Renewal</p>
-          <p className="text-2xl font-bold font-heading text-[hsl(var(--warning))]">{contracts.filter(c => c.status === 'Pending Renewal').length}</p>
+          <p className="text-xs text-muted-foreground">Partially Disbursed</p>
+          <p className="text-2xl font-bold font-heading text-[hsl(var(--warning))]">{filtered.filter(c => c.status === 'Partially Disbursed').length}</p>
         </div>
         <div className="kpi-card">
-          <p className="text-xs text-muted-foreground">Expired / Terminated</p>
-          <p className="text-2xl font-bold font-heading text-muted-foreground">{contracts.filter(c => c.status === 'Expired' || c.status === 'Terminated (Foreclosure)').length}</p>
+          <p className="text-xs text-muted-foreground">Foreclosed</p>
+          <p className="text-2xl font-bold font-heading text-muted-foreground">{filtered.filter(c => c.status === 'Foreclosed').length}</p>
         </div>
         <div className="kpi-card">
           <p className="text-xs text-muted-foreground">Total Lease Value</p>
-          <p className="text-xl font-bold font-heading">{formatCurrency(contracts.reduce((s, c) => s + c.totalValue, 0))}</p>
+          <p className="text-xl font-bold font-heading">{formatCurrency(filtered.reduce((s, c) => s + c.totalValue, 0))}</p>
         </div>
       </div>
 
@@ -99,16 +133,12 @@ const Contracts = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search leases..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 w-[200px]"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="Active">Active</SelectItem>
-            <SelectItem value="Pending Renewal">Pending Renewal</SelectItem>
-            <SelectItem value="Expired">Expired</SelectItem>
-            <SelectItem value="Terminated (Foreclosure)">Terminated (Foreclosure)</SelectItem>
-          </SelectContent>
-        </Select>
+        <Input
+          type="month"
+          value={periodFilter}
+          onChange={(e) => setPeriodFilter(e.target.value)}
+          className="h-9 w-[180px]"
+        />
       </div>
 
       <div className="bg-card rounded-lg border overflow-x-auto">
@@ -116,7 +146,7 @@ const Contracts = () => {
           <thead>
             <tr>
               <th>Lease ID</th>
-              <th>Client</th>
+              {user?.isAdmin && <th>Client</th>}
               <th>Asset Type</th>
               <th>Tenure</th>
               <th>Monthly Rental</th>
@@ -126,6 +156,7 @@ const Contracts = () => {
               <th>End</th>
               <th>Status</th>
               <th>Return Status</th>
+              <th>Rental Schedule</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -140,7 +171,7 @@ const Contracts = () => {
                     {c.contractNo}
                   </button>
                 </td>
-                <td>{c.clientName}</td>
+                {user?.isAdmin && <td>{c.clientName}</td>}
                 <td>{c.assetType}</td>
                 <td>{c.tenure} mo</td>
                 <td>{formatCurrency(c.monthlyRental)}</td>
@@ -149,35 +180,46 @@ const Contracts = () => {
                 <td className="text-muted-foreground">{c.startDate}</td>
                 <td className="text-muted-foreground">{c.endDate}</td>
                 <td>
-                  <span className={`status-badge ${c.status === 'Active' ? 'status-active' : c.status === 'Pending Renewal' ? 'status-pending' : c.status === 'Expired' ? 'status-overdue' : 'status-closed'}`}>
+                  <span className={`status-badge ${c.status === 'Disbursed' ? 'status-active' : c.status === 'Partially Disbursed' ? 'status-pending' : 'status-closed'}`}>
                     {c.status}
                   </span>
                 </td>
                 <td className="text-muted-foreground">
-                  {(c.status === 'Expired' || c.status === 'Terminated (Foreclosure)') ? (
+                  {(c.status === 'Foreclosed') ? (
                     <span className={`status-badge ${c.returnStatus === 'Returned' ? 'status-active' : c.returnStatus === 'Pending Return' ? 'status-pending' : 'status-closed'}`}>
                       {c.returnStatus || '—'}
                     </span>
                   ) : '—'}
                 </td>
                 <td>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setSelectedContract(c)}>
+                    <Download className="h-3 w-3" /> Schedule
+                  </Button>
+                </td>
+                <td>
                   <div className="flex items-center gap-1">
-                    {c.status === 'Pending Renewal' && (
-                      <Button variant="outline" size="sm" className="h-7 gap-1 text-xs text-success border-success/30 hover:bg-success/10" onClick={() => handleRenewal(c.contractNo)}>
-                        <RefreshCw className="h-3 w-3" /> Renew
+                    {(c.status === 'Partially Disbursed' || c.status === 'Disbursed') && (
+                      <Button variant="outline" size="sm" className="h-7 gap-1 text-xs text-success border-success/30 hover:bg-success/10" onClick={() => handleExtension(c.contractNo)}>
+                        <RefreshCw className="h-3 w-3" /> Extension
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleAmendment(c.contractNo)}>
                       <PenLine className="h-3 w-3" /> Amend
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setSelectedContract(c)}>
-                      <Download className="h-3 w-3" /> Rental Schedule
                     </Button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr className="bg-muted/50 font-bold border-t-2">
+              <td colSpan={user?.isAdmin ? 4 : 3} className="text-right py-4">Total:</td>
+              <td className="py-4 text-primary">{formatCurrency(filtered.reduce((sum, c) => sum + c.monthlyRental, 0))}</td>
+              <td className="py-4 text-primary">{formatCurrency(filtered.reduce((sum, c) => sum + c.totalValue, 0))}</td>
+              <td className="text-center py-4 text-primary">{filtered.reduce((sum, c) => sum + c.assetsCount, 0)}</td>
+              <td colSpan={6}></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
@@ -193,9 +235,9 @@ const Contracts = () => {
           {selectedContract && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                <div><span className="text-muted-foreground block">Client</span><span className="font-medium">{selectedContract.clientName}</span></div>
+                {user?.isAdmin && <div><span className="text-muted-foreground block">Client</span><span className="font-medium">{selectedContract.clientName}</span></div>}
                 <div><span className="text-muted-foreground block">Asset Type</span><span className="font-medium">{selectedContract.assetType}</span></div>
-                <div><span className="text-muted-foreground block">Status</span><span className={`status-badge ${selectedContract.status === 'Active' ? 'status-active' : 'status-pending'}`}>{selectedContract.status}</span></div>
+                <div><span className="text-muted-foreground block">Status</span><span className={`status-badge ${(selectedContract.status === 'Disbursed' || selectedContract.status === 'Partially Disbursed') ? 'status-active' : 'status-closed'}`}>{selectedContract.status}</span></div>
                 <div><span className="text-muted-foreground block">Tenure</span><span className="font-medium">{selectedContract.tenure} months</span></div>
                 <div><span className="text-muted-foreground block">Monthly Rental</span><span className="font-medium">{formatCurrency(selectedContract.monthlyRental)}</span></div>
                 <div><span className="text-muted-foreground block">Total Value</span><span className="font-medium">{formatCurrency(selectedContract.totalValue)}</span></div>
@@ -247,6 +289,7 @@ const Contracts = () => {
           )}
         </DialogContent>
       </Dialog>
+      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Contracts" activeFilters={{ search, status: leaseStatusFilter.join(','), periodFilter }} />
     </AppLayout>
   );
 };
