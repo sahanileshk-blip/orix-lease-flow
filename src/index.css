@@ -213,9 +213,32 @@
   color: hsl(var(--foreground));
 }
 
+/* ── Skeleton loader ──────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
 @layer components {
+  .skeleton {
+    @apply rounded-md bg-muted/70;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--muted-foreground) / 0.08) 50%,
+      hsl(var(--muted)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  /* KPI card base ─────────────────────────────────────────────────── */
   .kpi-card {
-    @apply bg-card rounded-lg border p-5 shadow-sm hover:shadow-md transition-shadow;
+    @apply bg-card rounded-lg border p-5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer;
+  }
+
+  .kpi-card:hover {
+    @apply border-primary/30 translate-y-[-1px];
   }
 
   .data-table {

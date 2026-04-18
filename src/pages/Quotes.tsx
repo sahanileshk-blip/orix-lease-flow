@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, FileText } from "lucide-react";
+import { Search, Plus, FileText, MoreHorizontal, CheckCircle2, XCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,11 +68,11 @@ const Quotes = () => {
   const [manufacturer, setManufacturer] = useState("");
   const [productName, setProductName] = useState("");
   const [variant, setVariant] = useState("");
-  
+
   // IT Specific
   const [storage, setStorage] = useState("");
   const [ram, setRam] = useState("");
-  
+
   // Vehicle Specific
   const [fuelType, setFuelType] = useState("");
   const [transmission, setTransmission] = useState("");
@@ -86,14 +88,22 @@ const Quotes = () => {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setDialogOpen(false);
-    toast({ title: "Quote Created", description: "New quote has been saved as Draft." });
+    toast({ title: "Request Submitted", description: "Your lease request has been sent to ORIX for review." });
+  };
+
+  const handleApprove = (code: string) => {
+    toast({ title: "Request Approved", description: `Quotation ${code} has been approved and moved to contracts.` });
+  };
+
+  const handleReject = (code: string) => {
+    toast({ title: "Request Rejected", description: `Quotation ${code} has been rejected.` });
   };
 
   return (
     <AppLayout>
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="page-title">Create lease request</h1>
+          <h1 className="page-title">Request Quotation</h1>
           <p className="page-description">Create and manage lease requests</p>
         </div>
         <div className="flex gap-2">
@@ -105,167 +115,167 @@ const Quotes = () => {
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-1.5"><Plus className="h-4 w-4" /> Create a new Request</Button>
+              <Button className="gap-1.5"><Plus className="h-4 w-4" />Request</Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Quote</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Type of Request</Label>
-                  <Input value="OL" disabled className="bg-muted" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Product</Label>
-                  <Select value={productType} onValueChange={(v) => { 
-                    setProductType(v); 
-                    setManufacturer(''); 
-                    setProductName(''); 
-                    setVariant(''); 
-                  }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="it-asset">IT Asset</SelectItem>
-                      <SelectItem value="vehicle">Vehicle</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Dynamic Common Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4 mt-2">
-                <div className="space-y-2">
-                  <Label>Manufacturer</Label>
-                  <Select value={manufacturer} onValueChange={setManufacturer} required>
-                    <SelectTrigger><SelectValue placeholder="Select Manufacturer" /></SelectTrigger>
-                    <SelectContent>
-                      {productType === "it-asset" ? (
-                        <>
-                          <SelectItem value="Apple">Apple</SelectItem>
-                          <SelectItem value="Dell">Dell</SelectItem>
-                          <SelectItem value="HP">HP</SelectItem>
-                          <SelectItem value="Lenovo">Lenovo</SelectItem>
-                          <SelectItem value="Asus">Asus</SelectItem>
-                          <SelectItem value="Acer">Acer</SelectItem>
-                        </>
-                      ) : (
-                        <>
-                          <SelectItem value="Toyota">Toyota</SelectItem>
-                          <SelectItem value="Hyundai">Hyundai</SelectItem>
-                          <SelectItem value="Tata">Tata Motors</SelectItem>
-                          <SelectItem value="Mahindra">Mahindra</SelectItem>
-                          <SelectItem value="Maruti">Maruti Suzuki</SelectItem>
-                          <SelectItem value="Kia">Kia</SelectItem>
-                          <SelectItem value="Honda">Honda</SelectItem>
-                          <SelectItem value="Royal Enfield">Royal Enfield</SelectItem>
-                          <SelectItem value="Bajaj">Bajaj Auto</SelectItem>
-                          <SelectItem value="TVS">TVS</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Product Name</Label>
-                  <Select value={productName} onValueChange={setProductName} required>
-                    <SelectTrigger><SelectValue placeholder="Select Product Type" /></SelectTrigger>
-                    <SelectContent>
-                      {productType === "it-asset" ? (
-                        <>
-                          <SelectItem value="Laptop">Laptop</SelectItem>
-                          <SelectItem value="Desktop">Desktop</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </>
-                      ) : (
-                        <>
-                          <SelectItem value="Passenger Car">Passenger Car</SelectItem>
-                          <SelectItem value="Commercial Vehicle">Commercial Vehicle</SelectItem>
-                          <SelectItem value="Two Wheeler - Bike">Two Wheeler - Bike</SelectItem>
-                          <SelectItem value="Two Wheeler - Scooty">Two Wheeler - Scooty</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Variant</Label>
-                  <Input value={variant} onChange={(e) => setVariant(e.target.value)} placeholder="e.g., M1, XZA+" required />
-                </div>
-              </div>
-
-              {/* IT Asset Specific */}
-              {productType === "it-asset" && (productName.toLowerCase().includes("laptop") || productName.toLowerCase().includes("desktop") || productName.toLowerCase().includes("mac") || productName.toLowerCase().includes("pc")) && (
-                <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-lg mt-2 border border-border/50">
+              <DialogHeader>
+                <DialogTitle>Request Quotation</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4 mt-2">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Storage</Label>
-                    <Input value={storage} onChange={(e) => setStorage(e.target.value)} placeholder="e.g., 512GB SSD" required />
+                    <Label>Type of Request</Label>
+                    <Input value="OL" disabled className="bg-muted" />
                   </div>
                   <div className="space-y-2">
-                    <Label>RAM</Label>
-                    <Input value={ram} onChange={(e) => setRam(e.target.value)} placeholder="e.g., 16GB" required />
-                  </div>
-                </div>
-              )}
-
-              {/* Vehicle Specific */}
-              {productType === "vehicle" && (
-                <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-lg mt-2 border border-border/50">
-                  <div className="space-y-2">
-                    <Label>Fuel Type</Label>
-                    <Select value={fuelType} onValueChange={setFuelType} required>
-                      <SelectTrigger><SelectValue placeholder="Select Fuel" /></SelectTrigger>
+                    <Label>Product</Label>
+                    <Select value={productType} onValueChange={(v) => {
+                      setProductType(v);
+                      setManufacturer('');
+                      setProductName('');
+                      setVariant('');
+                    }}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="diesel">Diesel</SelectItem>
-                        <SelectItem value="petrol">Petrol</SelectItem>
-                        <SelectItem value="cng">CNG</SelectItem>
-                        <SelectItem value="ev">EV</SelectItem>
-                        <SelectItem value="hybrid">Hybrid</SelectItem>
+                        <SelectItem value="it-asset">IT Asset</SelectItem>
+                        <SelectItem value="vehicle">Vehicle</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Dynamic Common Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4 mt-2">
+                  <div className="space-y-2">
+                    <Label>Manufacturer</Label>
+                    <Select value={manufacturer} onValueChange={setManufacturer} required>
+                      <SelectTrigger><SelectValue placeholder="Select Manufacturer" /></SelectTrigger>
+                      <SelectContent>
+                        {productType === "it-asset" ? (
+                          <>
+                            <SelectItem value="Apple">Apple</SelectItem>
+                            <SelectItem value="Dell">Dell</SelectItem>
+                            <SelectItem value="HP">HP</SelectItem>
+                            <SelectItem value="Lenovo">Lenovo</SelectItem>
+                            <SelectItem value="Asus">Asus</SelectItem>
+                            <SelectItem value="Acer">Acer</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="Toyota">Toyota</SelectItem>
+                            <SelectItem value="Hyundai">Hyundai</SelectItem>
+                            <SelectItem value="Tata">Tata Motors</SelectItem>
+                            <SelectItem value="Mahindra">Mahindra</SelectItem>
+                            <SelectItem value="Maruti">Maruti Suzuki</SelectItem>
+                            <SelectItem value="Kia">Kia</SelectItem>
+                            <SelectItem value="Honda">Honda</SelectItem>
+                            <SelectItem value="Royal Enfield">Royal Enfield</SelectItem>
+                            <SelectItem value="Bajaj">Bajaj Auto</SelectItem>
+                            <SelectItem value="TVS">TVS</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Transmission</Label>
-                    <Select value={transmission} onValueChange={setTransmission} required>
-                      <SelectTrigger><SelectValue placeholder="Select Transmission" /></SelectTrigger>
+                    <Label>Product Name</Label>
+                    <Select value={productName} onValueChange={setProductName} required>
+                      <SelectTrigger><SelectValue placeholder="Select Product Type" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="manual">Manual</SelectItem>
-                        <SelectItem value="automatic">Automatic</SelectItem>
+                        {productType === "it-asset" ? (
+                          <>
+                            <SelectItem value="Laptop">Laptop</SelectItem>
+                            <SelectItem value="Desktop">Desktop</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="Passenger Car">Passenger Car</SelectItem>
+                            <SelectItem value="Commercial Vehicle">Commercial Vehicle</SelectItem>
+                            <SelectItem value="Two Wheeler - Bike">Two Wheeler - Bike</SelectItem>
+                            <SelectItem value="Two Wheeler - Scooty">Two Wheeler - Scooty</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Sub Category</Label>
-                    <Select value={subCategory} onValueChange={setSubCategory} required>
-                      <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="suv">SUV</SelectItem>
-                        <SelectItem value="sedan">Sedan</SelectItem>
-                        <SelectItem value="hatchback">Hatchback</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Variant</Label>
+                    <Input value={variant} onChange={(e) => setVariant(e.target.value)} placeholder="e.g., M1, XZA+" required />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Vehicle Colour</Label>
-                    <div className="flex gap-2">
-                      <Input type="color" className="p-1 h-9 w-12 cursor-pointer" value={vehicleColour || '#ffffff'} onChange={(e) => setVehicleColour(e.target.value)} />
-                      <Input placeholder="Colour Name" value={vehicleColour} onChange={(e) => setVehicleColour(e.target.value)} required />
+                </div>
+
+                {/* IT Asset Specific */}
+                {productType === "it-asset" && (productName.toLowerCase().includes("laptop") || productName.toLowerCase().includes("desktop") || productName.toLowerCase().includes("mac") || productName.toLowerCase().includes("pc")) && (
+                  <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-lg mt-2 border border-border/50">
+                    <div className="space-y-2">
+                      <Label>Storage</Label>
+                      <Input value={storage} onChange={(e) => setStorage(e.target.value)} placeholder="e.g., 512GB SSD" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>RAM</Label>
+                      <Input value={ram} onChange={(e) => setRam(e.target.value)} placeholder="e.g., 16GB" required />
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" variant="outline">Save as Draft</Button>
-                <Button type="submit">Submit Quote</Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                {/* Vehicle Specific */}
+                {productType === "vehicle" && (
+                  <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-lg mt-2 border border-border/50">
+                    <div className="space-y-2">
+                      <Label>Fuel Type</Label>
+                      <Select value={fuelType} onValueChange={setFuelType} required>
+                        <SelectTrigger><SelectValue placeholder="Select Fuel" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="diesel">Diesel</SelectItem>
+                          <SelectItem value="petrol">Petrol</SelectItem>
+                          <SelectItem value="cng">CNG</SelectItem>
+                          <SelectItem value="ev">EV</SelectItem>
+                          <SelectItem value="hybrid">Hybrid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Transmission</Label>
+                      <Select value={transmission} onValueChange={setTransmission} required>
+                        <SelectTrigger><SelectValue placeholder="Select Transmission" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="manual">Manual</SelectItem>
+                          <SelectItem value="automatic">Automatic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sub Category</Label>
+                      <Select value={subCategory} onValueChange={setSubCategory} required>
+                        <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="suv">SUV</SelectItem>
+                          <SelectItem value="sedan">Sedan</SelectItem>
+                          <SelectItem value="hatchback">Hatchback</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Vehicle Colour</Label>
+                      <div className="flex gap-2">
+                        <Input type="color" className="p-1 h-9 w-12 cursor-pointer" value={vehicleColour || '#ffffff'} onChange={(e) => setVehicleColour(e.target.value)} />
+                        <Input placeholder="Colour Name" value={vehicleColour} onChange={(e) => setVehicleColour(e.target.value)} required />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                  <Button type="submit" variant="outline">Save as Draft</Button>
+                  <Button type="submit">Request Quotation</Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
-    </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="relative">
@@ -299,6 +309,7 @@ const Quotes = () => {
               <th>Total Value</th>
               <th>Status</th>
               <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -317,6 +328,31 @@ const Quotes = () => {
                   </span>
                 </td>
                 <td className="text-muted-foreground">{q.createdAt}</td>
+                <td>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => navigate(`/quotes/${q.id}`)}>
+                        <FileText className="h-4 w-4 mr-2" /> View Details
+                      </DropdownMenuItem>
+                      {user?.isAdmin && q.status === 'Pending' && (
+                        <>
+                          <DropdownMenuItem className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50" onClick={() => handleApprove(q.quotationCode)}>
+                            <CheckCircle2 className="h-4 w-4 mr-2" /> Approve Request
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 focus:bg-rose-50" onClick={() => handleReject(q.quotationCode)}>
+                            <XCircle className="h-4 w-4 mr-2" /> Reject Request
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      <DropdownMenuItem>
+                        <Download className="h-4 w-4 mr-2" /> Export Quote
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
               </tr>
             ))}
           </tbody>

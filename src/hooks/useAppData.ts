@@ -1,11 +1,11 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  assets, 
-  contracts, 
-  invoices, 
-  tickets, 
-  documents, 
-  notifications, 
+import {
+  assets,
+  contracts,
+  invoices,
+  tickets,
+  documents,
+  notifications,
   dashboardKPIs,
   costCenters,
   locations,
@@ -18,7 +18,7 @@ import { useFilter } from "@/contexts/FilterContext";
 export function useAppData() {
   const { user } = useAuth();
   const { clientFilter, costCenterFilter, locationFilter, leaseStatusFilter } = useFilter();
-  
+
   if (!user) {
     return { assets: [], contracts: [], invoices: [], tickets: [], documents: [], notifications: [], dashboardKPIs, costCenters, locations, clients, faqItems };
   }
@@ -63,9 +63,10 @@ export function useAppData() {
     activeLeases: fContracts.filter(c => c.status === 'Disbursed' || c.status === 'Partially Disbursed').length,
     totalAssets: fAssets.length,
     totalLeaseValue: fContracts.reduce((sum, c) => sum + c.totalValue, 0),
+    activeLeaseValue: fContracts.filter(c => c.status === 'Disbursed' || c.status === 'Partially Disbursed').reduce((sum, c) => sum + c.totalValue, 0),
     assetsByType: {
       Vehicle: fAssets.filter(a => a.type === 'Vehicle').length,
-      IT: fAssets.filter(a => a.type === 'IT').length,
+      'IT Equipment': fAssets.filter(a => a.type === 'IT Equipment').length,
     },
     assetsByStatus: {
       Active: fAssets.filter(a => a.status === 'Active').length,

@@ -36,7 +36,7 @@ const Documents = () => {
     <AppLayout>
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="page-title">Document Management</h1>
+          <h1 className="page-title">Document Centre</h1>
           <p className="page-description">Upload, manage, and track document versions and expiry</p>
         </div>
         <div className="flex gap-2">

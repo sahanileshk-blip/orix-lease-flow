@@ -8,7 +8,7 @@ export interface Asset {
   id: string;
   clientId: string;
   clientName: string;
-  type: 'Vehicle' | 'IT';
+  type: 'Vehicle' | 'IT Equipment';
   assetTag: string;
   description: string;
   status: 'Active' | 'Under Maintenance' | 'Disposed' | 'In Transit';
@@ -35,7 +35,8 @@ export interface Contract {
   clientId: string;
   clientName: string;
   contractNo: string;
-  assetType: 'Vehicle' | 'IT';
+  assetType: 'Vehicle' | 'IT Equipment';
+  leaseType: 'OL' | 'FL';
   startDate: string;
   endDate: string;
   tenure: number;
@@ -69,7 +70,7 @@ export interface Ticket {
   clientId: string;
   clientName: string;
   ticketNo: string;
-  category: 'Vehicle' | 'IT' | 'Lease';
+  category: 'Vehicle' | 'IT Equipment' | 'Lease';
   subject: string;
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
@@ -132,11 +133,11 @@ export const clients: Client[] = [
 const baseAssets: Asset[] = [
   // Core items preserved for explicit search / notification references
   { id: 'a1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', type: 'Vehicle', assetTag: 'VH-001', category: 'Passenger Car', description: 'Toyota Innova Crysta', status: 'Active', location: 'Mumbai', costCenter: 'CC-MUM-001', assignedTo: 'Rajesh Kumar', leaseStartDate: '2024-01-15', leaseEndDate: '2027-01-14', registrationNo: 'MH-02-AB-1234', make: 'Toyota', model: 'Innova Crysta', driver: 'Suresh Patil', insuranceExpiry: '2025-06-30', leaseStatus: 'Disbursed' },
-  { id: 'a10', clientId: 'c1', clientName: 'Qualtech Edge Ltd', type: 'IT', assetTag: 'IT-005', description: 'Dell Optiplex 7090 MFF', status: 'Active', location: 'Mumbai', costCenter: 'CC-MUM-001', assignedTo: 'Sunita Rao', leaseStartDate: '2023-11-01', leaseEndDate: '2026-10-31', serialNo: 'DL7090-48492', category: 'Desktop', condition: 'Good', leaseStatus: 'Disbursed' },
+  { id: 'a10', clientId: 'c1', clientName: 'Qualtech Edge Ltd', type: 'IT Equipment', assetTag: 'IT-005', description: 'Dell Optiplex 7090 MFF', status: 'Active', location: 'Mumbai', costCenter: 'CC-MUM-001', assignedTo: 'Sunita Rao', leaseStartDate: '2023-11-01', leaseEndDate: '2026-10-31', serialNo: 'DL7090-48492', category: 'Desktop', condition: 'Good', leaseStatus: 'Disbursed' },
 ];
 
 const baseContracts: Contract[] = [
-  { id: 'ct1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-001', assetType: 'Vehicle', startDate: '2024-01-15', endDate: '2026-05-14', tenure: 36, monthlyRental: 45000, totalValue: 1620000, status: 'Disbursed', assetsCount: 2, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-001', assetType: 'Vehicle', leaseType: 'OL', startDate: '2024-01-15', endDate: '2027-01-14', tenure: 36, monthlyRental: 45000, totalValue: 1620000, status: 'Disbursed', assetsCount: 2, costCenter: 'CC-MUM-001', location: 'Mumbai' },
 ];
 
 const baseInvoices: Invoice[] = [
@@ -152,14 +153,13 @@ const generateAssets = (count: number): Asset[] => {
   const categories = ['Passenger Car', 'Commercial Vehicle', 'Two Wheeler - Bike', 'Two Wheeler - Scooty'];
   const statuses = ['Active', 'Under Maintenance', 'In Transit', 'Disposed'];
   const leaseStatuses = ['Partially Disbursed', 'Disbursed', 'Foreclosed'];
-  
+
   for (let i = 0; i < count; i++) {
     const isVehicle = i % 2 === 0;
     const cl = clients[i % clients.length];
     const loc = locations[i % locations.length];
     const cc = costCenters[i % costCenters.length];
-    
-    const endDates = ['2025-03-31', '2026-09-30', '2026-12-31', '2027-01-01', '2028-06-30'];
+
     if (isVehicle) {
       const vCat = categories[i % categories.length];
       const model = vCat.includes('Bike') ? 'Motorcycle' : (vCat.includes('Scooty') ? 'Activa' : 'Sedan');
@@ -167,17 +167,19 @@ const generateAssets = (count: number): Asset[] => {
         id: `gen-a-${i}`, clientId: cl.id, clientName: cl.name, type: 'Vehicle',
         assetTag: `VH-GEN-${1000 + i}`, description: `${vehicleMakes[i % 8]} ${model}`,
         category: vCat, status: statuses[i % 4] as any, location: loc, costCenter: cc,
-        assignedTo: roles[i % roles.length], leaseStartDate: '2024-01-01', leaseEndDate: endDates[i % 5],
-        registrationNo: `${loc.substring(0,2).toUpperCase()}-1${i}-GEN`, make: vehicleMakes[i % 8], model: model,
+        assignedTo: roles[i % roles.length], leaseStartDate: '2024-01-01', 
+        leaseEndDate: new Date(new Date('2024-01-01').setMonth(new Date('2024-01-01').getMonth() + 36)).toISOString().split('T')[0],
+        registrationNo: `${loc.substring(0, 2).toUpperCase()}-1${i}-GEN`, make: vehicleMakes[i % 8], model: model,
         driver: `Driver ${i}`, insuranceExpiry: '2025-01-01', leaseStatus: leaseStatuses[i % 3] as any
       });
     } else {
       const isLaptop = i % 3 === 0;
       result.push({
-        id: `gen-a-${i}`, clientId: cl.id, clientName: cl.name, type: 'IT',
+        id: `gen-a-${i}`, clientId: cl.id, clientName: cl.name, type: 'IT Equipment',
         assetTag: `IT-GEN-${1000 + i}`, description: isLaptop ? 'Dell Latitude 5540' : 'Dell Optiplex',
         category: isLaptop ? 'Laptop' : 'Desktop', status: statuses[i % 4] as any, location: loc, costCenter: cc,
-        assignedTo: roles[i % roles.length], leaseStartDate: '2024-01-01', leaseEndDate: endDates[i % 5],
+        assignedTo: roles[i % roles.length], leaseStartDate: '2024-01-01', 
+        leaseEndDate: new Date(new Date('2024-01-01').setMonth(new Date('2024-01-01').getMonth() + 36)).toISOString().split('T')[0],
         serialNo: `SNGEN-${i}`, condition: i % 2 === 0 ? 'Good' : 'Excellent', leaseStatus: leaseStatuses[i % 3] as any
       });
     }
@@ -191,9 +193,13 @@ const generateContracts = (count: number): Contract[] => {
   const endDates = ['2025-03-31', '2026-09-30', '2026-12-31', '2027-01-01', '2028-06-30'];
   for (let i = 0; i < count; i++) {
     const cl = clients[i % clients.length];
+    const year = 2023 + (i % 3);
+    const leaseType = i % 3 === 0 ? 'FL' : 'OL';
+    const startDate = (i === 0) ? '2024-08-16' : `${year}-01-01`;
     result.push({
-      id: `gen-ct-${i}`, clientId: cl.id, clientName: cl.name, contractNo: `OL-GEN-${2000 + i}`,
-      assetType: i % 2 === 0 ? 'Vehicle' : 'IT', startDate: '2024-01-01', endDate: endDates[i % 5],
+      id: `gen-ct-${i}`, clientId: cl.id, clientName: cl.name, contractNo: `${leaseType}-${year}-${String(100 + i).padStart(3, '0')}`,
+      assetType: i % 2 === 0 ? 'Vehicle' : 'IT Equipment', leaseType, startDate, 
+      endDate: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 36)).toISOString().split('T')[0],
       tenure: 36, monthlyRental: 25000 + (i * 1000), totalValue: (25000 + (i * 1000)) * 36,
       status: statuses[i % 3] as any, assetsCount: 2 + (i % 5), costCenter: costCenters[i % costCenters.length],
       location: locations[i % locations.length]
@@ -207,10 +213,14 @@ const generateInvoices = (count: number): Invoice[] => {
   const statuses = ['Paid', 'Pending', 'Overdue'];
   for (let i = 0; i < count; i++) {
     const cl = clients[i % clients.length];
+    const year = 2023 + ((i % 50) % 3);
+    const leaseType = (i % 50) % 3 === 0 ? 'FL' : 'OL';
+    const status = statuses[i % 3] as any;
     result.push({
       id: `gen-inv-${i}`, clientId: cl.id, clientName: cl.name, invoiceNo: `INV-GEN-${3000 + i}`,
-      contractNo: `OL-GEN-${2000 + (i % 50)}`, amount: 15000 + (i * 500), dueDate: '2026-05-01',
-      status: statuses[i % 3] as any, generatedDate: '2026-04-01', 
+      contractNo: `${leaseType}-${year}-${String(100 + (i % 50)).padStart(3, '0')}`, amount: 15000 + (i * 500), dueDate: '2026-05-01',
+      status, generatedDate: '2026-04-01',
+      paidDate: status === 'Paid' ? '2026-04-10' : undefined,
       costCenter: costCenters[i % costCenters.length],
       location: locations[i % locations.length]
     });
@@ -226,7 +236,7 @@ export const invoices = [...baseInvoices, ...generateInvoices(120)];
 export const tickets: Ticket[] = [
   { id: 't1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-001', category: 'Vehicle', subject: 'Flat tyre replacement - VH-001', priority: 'High', status: 'Open', createdAt: '2026-04-10', slaDeadline: '2026-04-12', assignedTo: 'ORIX Service Desk', costCenter: 'CC-MUM-001', location: 'Mumbai', externalLink: 'https://orix-internal.service-now.com/sr/SR-2026-001' },
   { id: 't5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-005', category: 'Vehicle', subject: 'Scheduled service due - VH-002', priority: 'Medium', status: 'Closed', createdAt: '2026-04-05', slaDeadline: '2026-04-10', assignedTo: 'ORIX Service Desk', costCenter: 'CC-DEL-002', location: 'Delhi', rating: 5, csatScore: 95 },
-  { id: 't7', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-010', category: 'IT', subject: 'Laptop battery replacement - IT-005', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-12', slaDeadline: '2026-04-15', assignedTo: 'Hardware Ops', costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 't7', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-010', category: 'IT Equipment', subject: 'Laptop battery replacement - IT-005', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-12', slaDeadline: '2026-04-15', assignedTo: 'Hardware Ops', costCenter: 'CC-MUM-001', location: 'Mumbai' },
 
   { id: 't2', clientId: 'c2', clientName: 'Infosys Technologies', ticketNo: 'SR-2026-002', category: 'IT', subject: 'Laptop screen flickering - IT-001', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-08', slaDeadline: '2026-04-13', assignedTo: 'Tech Support', costCenter: 'CC-BLR-003', location: 'Bangalore' },
   { id: 't8', clientId: 'c2', clientName: 'Infosys Technologies', ticketNo: 'SR-2026-011', category: 'Lease', subject: 'Inquiry on bulk asset return', priority: 'Low', status: 'Open', createdAt: '2026-04-14', slaDeadline: '2026-04-20', assignedTo: 'Account Mgmt', costCenter: 'CC-BLR-003', location: 'Bangalore' },
@@ -257,6 +267,6 @@ export const dashboardKPIs = {
   pendingTickets: 0,
   overdueInvoices: 0,
   overdueAmount: 0,
-  assetsByType: { Vehicle: 0, IT: 0 },
+  assetsByType: { Vehicle: 0, 'IT Equipment': 0 },
   assetsByStatus: { Active: 0, 'Under Maintenance': 0, 'In Transit': 0 },
 };

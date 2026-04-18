@@ -29,6 +29,22 @@ function downloadCSV(data: any[], filename: string) {
   URL.revokeObjectURL(url);
 }
 
+const TICKET_CATEGORIES: Record<string, string[]> = {
+  "Vehicle": [
+    "Service / Maintenance",
+    "Accident Reporting",
+    "Replacement Request",
+    "General Vehicle Query"
+  ],
+  "IT Equipment": [
+    "Hardware Issue",
+    "Software Issue",
+    "Replacement Request",
+    "Upgrade Request",
+    "General IT Query"
+  ]
+};
+
 const Tickets = () => {
   const { tickets } = useAppData();
   const { clientFilter, costCenterFilter, locationFilter } = useFilter();
@@ -39,6 +55,8 @@ const Tickets = () => {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [description, setDescription] = useState("");
+  const [ticketCategory, setTicketCategory] = useState<string>("");
+  const [ticketType, setTicketType] = useState<string>("");
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [newStatus, setNewStatus] = useState("Open");
@@ -114,77 +132,80 @@ const Tickets = () => {
           <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'service-requests.csv')}>
             <Download className="h-4 w-4" /> Download CSV
           </Button>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-1.5"><Plus className="h-4 w-4" /> Create Ticket</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Service Request</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <Select defaultValue="Vehicle">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="IT">IT</SelectItem>
-                        <SelectItem value="Vehicle">Vehicle</SelectItem>
-                        <SelectItem value="Invoice">Invoice</SelectItem>
-                        <SelectItem value="Finance">Finance</SelectItem>
-                        <SelectItem value="General">General</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+          {user?.isPortalUser && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-1.5"><Plus className="h-4 w-4" /> Create Ticket</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Service Request</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Category</Label>
+                      <Select value={ticketCategory} onValueChange={(val) => {
+                        setTicketCategory(val);
+                        setTicketType("");
+                      }}>
+                        <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Vehicle">Vehicle</SelectItem>
+                          <SelectItem value="IT Equipment">IT Equipment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Request Type</Label>
+                      <Select
+                        value={ticketType}
+                        onValueChange={setTicketType}
+                        disabled={!ticketCategory}
+                      >
+                        <SelectTrigger><SelectValue placeholder={ticketCategory ? "Select Type" : "Select Category first"} /></SelectTrigger>
+                        <SelectContent>
+                          {ticketCategory && TICKET_CATEGORIES[ticketCategory]?.map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Asset ID / Lease ID (Optional)</Label>
+                      <Input placeholder="e.g. VH-001 or OL-2024-001" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select defaultValue="Medium">
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Low">Low</SelectItem>
+                          <SelectItem value="Medium">Medium</SelectItem>
+                          <SelectItem value="High">High</SelectItem>
+                          <SelectItem value="Critical">Critical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Request Type</Label>
-                    <Select defaultValue="Service Request">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="New Request">New Request</SelectItem>
-                        <SelectItem value="Service Request">Service Request</SelectItem>
-                        <SelectItem value="Closure Request">Closure Request</SelectItem>
-                        <SelectItem value="Report Breakdown">Report Breakdown</SelectItem>
-                        <SelectItem value="Report Stolen Item">Report Stolen Item</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Asset ID / Lease ID (Optional)</Label>
-                    <Input placeholder="e.g. VH-001 or OL-2024-001" />
+                    <Label>Subject</Label>
+                    <Input placeholder="Brief description of the issue" required />
                   </div>
                   <div className="space-y-2">
-                    <Label>Priority</Label>
-                    <Select defaultValue="Medium">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Low">Low</SelectItem>
-                        <SelectItem value="Medium">Medium</SelectItem>
-                        <SelectItem value="High">High</SelectItem>
-                        <SelectItem value="Critical">Critical</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Description <span className="text-destructive">*</span></Label>
+                    <Textarea placeholder="Provide detailed information..." rows={4} required value={description} onChange={e => setDescription(e.target.value)} />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Subject</Label>
-                  <Input placeholder="Brief description of the issue" required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Description <span className="text-destructive">*</span></Label>
-                  <Textarea placeholder="Provide detailed information..." rows={4} required value={description} onChange={e => setDescription(e.target.value)} />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                  <Button type="submit">Submit Ticket</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit">Submit Ticket</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 

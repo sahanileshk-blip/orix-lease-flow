@@ -2,23 +2,26 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Download, FileText, RefreshCw, PenLine, Save } from "lucide-react";
+import { Search, Download, FileText, RefreshCw, PenLine, Save, MoreHorizontal, ArrowRight } from "lucide-react";
 import { SaveReportModal } from "@/components/SaveReportModal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFilter } from "@/contexts/FilterContext";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
 }
 
 function downloadCSV(data: any[], filename: string) {
-  const headers = ['Lease ID', 'Client', 'Asset Type', 'Tenure', 'Monthly Rental', 'Total Value', 'Assets', 'Start', 'End', 'Status', 'Cost Center', 'Location', 'Return Status'];
+  const headers = ['Lease ID', 'Lease Type', 'Client', 'Asset Type', 'Tenure', 'Monthly Rental', 'Total Value', 'Assets', 'Start', 'End', 'Status', 'Cost Center', 'Location', 'Return Status'];
   const rows = data.map(c => [
-    c.contractNo, c.clientName, c.assetType, c.tenure, c.monthlyRental, c.totalValue, c.assetsCount, c.startDate, c.endDate, c.status, c.costCenter, c.location, c.returnStatus || ''
+    c.contractNo, c.leaseType, c.clientName, c.assetType, c.tenure, c.monthlyRental, c.totalValue, c.assetsCount, c.startDate, c.endDate, c.status, c.costCenter, c.location, c.returnStatus || ''
   ]);
   const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -36,11 +39,13 @@ const Contracts = () => {
   const [periodFilter, setPeriodFilter] = useState("");
   const [search, setSearch] = useState("");
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<any | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const filtered = rawContracts.filter((c) => {
+    if (!user?.isAdmin && parseInt(c.id) % 2 === 0) return false; // Mock filtering logic for My Leases
     if (search && !c.contractNo.toLowerCase().includes(search.toLowerCase()) && !c.clientName.toLowerCase().includes(search.toLowerCase())) return false;
 
     if (periodFilter !== "") {
@@ -92,7 +97,7 @@ const Contracts = () => {
     <AppLayout>
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="page-title">Lease Management</h1>
+          <h1 className="page-title">{user?.isAdmin ? "Lease Management" : "My Leases"}</h1>
           <p className="page-description">Overview of active contracts, renewals, and closures</p>
         </div>
         <div className="flex gap-2">
@@ -128,17 +133,19 @@ const Contracts = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search leases..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto ml-auto">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search leases..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
+          </div>
+          <Input
+            type="month"
+            value={periodFilter}
+            onChange={(e) => setPeriodFilter(e.target.value)}
+            className="h-9 w-[180px]"
+          />
         </div>
-        <Input
-          type="month"
-          value={periodFilter}
-          onChange={(e) => setPeriodFilter(e.target.value)}
-          className="h-9 w-[180px]"
-        />
       </div>
 
       <div className="bg-card rounded-lg border overflow-x-auto">
@@ -146,12 +153,15 @@ const Contracts = () => {
           <thead>
             <tr>
               <th>Lease ID</th>
+              <th>Type</th>
               {user?.isAdmin && <th>Client</th>}
               <th>Asset Type</th>
-              <th>Tenure</th>
+              <th>Tenure(Months)</th>
               <th>Monthly Rental</th>
+              <th>Total Dues</th>
               <th>Total Value</th>
               <th>Assets</th>
+              <th>Overdue Invoices</th>
               <th>Start</th>
               <th>End</th>
               <th>Status</th>
@@ -165,18 +175,25 @@ const Contracts = () => {
               <tr key={c.id}>
                 <td>
                   <button
-                    onClick={() => setSelectedContract(c)}
+                    onClick={() => navigate(`/leases/${c.contractNo}`)}
                     className="font-medium text-primary hover:underline cursor-pointer"
                   >
                     {c.contractNo}
                   </button>
                 </td>
+                <td>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.leaseType === 'FL' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-600'}`}>
+                    {c.leaseType}
+                  </span>
+                </td>
                 {user?.isAdmin && <td>{c.clientName}</td>}
                 <td>{c.assetType}</td>
-                <td>{c.tenure} mo</td>
+                <td>{c.tenure}</td>
                 <td>{formatCurrency(c.monthlyRental)}</td>
+                <td>{formatCurrency(c.monthlyRental * (c.status === "Partially Disbursed" ? 2 : 0))}</td>
                 <td>{formatCurrency(c.totalValue)}</td>
-                <td className="text-center">{c.assetsCount}</td>
+                <td className="text-center">{c.status === "Partially Disbursed" ? `${c.assetsCount}/${c.assetsCount + 2}` : c.assetsCount}</td>
+                <td className="text-center">{c.status === "Partially Disbursed" ? 2 : 0}</td>
                 <td className="text-muted-foreground">{c.startDate}</td>
                 <td className="text-muted-foreground">{c.endDate}</td>
                 <td>
@@ -192,99 +209,87 @@ const Contracts = () => {
                   ) : '—'}
                 </td>
                 <td>
-                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setSelectedContract(c)}>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setSelectedSchedule(c)}>
                     <Download className="h-3 w-3" /> Schedule
                   </Button>
                 </td>
                 <td>
-                  <div className="flex items-center gap-1">
-                    {(c.status === 'Partially Disbursed' || c.status === 'Disbursed') && (
-                      <Button variant="outline" size="sm" className="h-7 gap-1 text-xs text-success border-success/30 hover:bg-success/10" onClick={() => handleExtension(c.contractNo)}>
-                        <RefreshCw className="h-3 w-3" /> Extension
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => handleAmendment(c.contractNo)}>
-                      <PenLine className="h-3 w-3" /> Amend
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem disabled={c.status === 'Foreclosed'}>Restructure</DropdownMenuItem>
+                      <DropdownMenuItem disabled={c.status === 'Foreclosed'}>Foreclosure</DropdownMenuItem>
+                      <DropdownMenuItem disabled={c.status === 'Foreclosed'}>Request a Call</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="bg-muted/50 font-bold border-t-2">
-              <td colSpan={user?.isAdmin ? 4 : 3} className="text-right py-4">Total:</td>
+              <td colSpan={user?.isAdmin ? 5 : 4} className="text-right py-4">Total:</td>
               <td className="py-4 text-primary">{formatCurrency(filtered.reduce((sum, c) => sum + c.monthlyRental, 0))}</td>
+              <td className="py-4 text-primary">{formatCurrency(filtered.reduce((sum, c) => sum + (c.monthlyRental * (c.status === "Partially Disbursed" ? 2 : 0)), 0))}</td>
               <td className="py-4 text-primary">{formatCurrency(filtered.reduce((sum, c) => sum + c.totalValue, 0))}</td>
-              <td className="text-center py-4 text-primary">{filtered.reduce((sum, c) => sum + c.assetsCount, 0)}</td>
+              <td className="text-center py-4 text-primary"></td>
+              <td className="text-center py-4 text-primary"></td>
               <td colSpan={6}></td>
             </tr>
           </tfoot>
         </table>
       </div>
 
-      {/* Lease Detail / Rental Schedule Dialog */}
-      <Dialog open={!!selectedContract} onOpenChange={() => setSelectedContract(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      {/* Rental Schedule Modal Only */}
+      <Dialog open={!!selectedSchedule} onOpenChange={() => setSelectedSchedule(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Lease Detail – {selectedContract?.contractNo}
+              Rental Schedule (Rental Breakdown) – {selectedSchedule?.contractNo}
             </DialogTitle>
           </DialogHeader>
-          {selectedContract && (
+          {selectedSchedule && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                {user?.isAdmin && <div><span className="text-muted-foreground block">Client</span><span className="font-medium">{selectedContract.clientName}</span></div>}
-                <div><span className="text-muted-foreground block">Asset Type</span><span className="font-medium">{selectedContract.assetType}</span></div>
-                <div><span className="text-muted-foreground block">Status</span><span className={`status-badge ${(selectedContract.status === 'Disbursed' || selectedContract.status === 'Partially Disbursed') ? 'status-active' : 'status-closed'}`}>{selectedContract.status}</span></div>
-                <div><span className="text-muted-foreground block">Tenure</span><span className="font-medium">{selectedContract.tenure} months</span></div>
-                <div><span className="text-muted-foreground block">Monthly Rental</span><span className="font-medium">{formatCurrency(selectedContract.monthlyRental)}</span></div>
-                <div><span className="text-muted-foreground block">Total Value</span><span className="font-medium">{formatCurrency(selectedContract.totalValue)}</span></div>
-                <div><span className="text-muted-foreground block">Start Date</span><span className="font-medium">{selectedContract.startDate}</span></div>
-                <div><span className="text-muted-foreground block">End Date</span><span className="font-medium">{selectedContract.endDate}</span></div>
-                <div><span className="text-muted-foreground block">Assets Count</span><span className="font-medium">{selectedContract.assetsCount}</span></div>
-                <div><span className="text-muted-foreground block">Cost Center</span><span className="font-medium">{selectedContract.costCenter}</span></div>
-                <div><span className="text-muted-foreground block">Location</span><span className="font-medium">{selectedContract.location}</span></div>
-                {selectedContract.returnStatus && (
-                  <div><span className="text-muted-foreground block">Return Status</span><span className="font-medium">{selectedContract.returnStatus}</span></div>
-                )}
-              </div>
-
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-heading font-semibold">Rental Schedule (EMI Breakdown)</h3>
+                  <h3 className="font-heading font-semibold text-sm uppercase tracking-wide text-muted-foreground">Repayment Timeline</h3>
                   <Button variant="outline" size="sm" className="gap-1 text-xs">
                     <Download className="h-3 w-3" /> Export CSV
                   </Button>
                 </div>
-                <div className="border rounded-lg overflow-x-auto">
+                <div className="border rounded-lg overflow-hidden">
                   <table className="data-table">
                     <thead>
-                      <tr>
+                      <tr className="bg-muted/50">
                         <th>Month</th>
-                        <th>Principal</th>
-                        <th>Interest</th>
+                        <th>Rental (Principal + Int)</th>
                         <th>GST (18%)</th>
-                        <th>Total</th>
+                        <th>Total Payable</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {generateRentalSchedule(selectedContract).map((row) => (
+                      {generateRentalSchedule(selectedSchedule).map((row) => (
                         <tr key={row.month}>
                           <td>{row.month}</td>
-                          <td>{formatCurrency(row.principal)}</td>
-                          <td>{formatCurrency(row.interest)}</td>
-                          <td>{formatCurrency(row.gst)}</td>
-                          <td className="font-medium">{formatCurrency(row.total)}</td>
+                          <td className="font-semibold">{formatCurrency(row.principal + row.interest)}</td>
+                          <td className="text-muted-foreground">{formatCurrency(row.gst)}</td>
+                          <td className="font-bold text-primary">{formatCurrency(row.total)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Showing first 12 months of {selectedContract.tenure} month tenure</p>
+                <p className="text-[10px] text-muted-foreground mt-2">Showing first 12 months (standard projection) of {selectedSchedule.tenure} months.</p>
               </div>
 
+              <div className="flex justify-end pt-2">
+                <Button variant="default" onClick={() => navigate(`/leases/${selectedSchedule.contractNo}`)}>
+                  View Full Lease Details <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

@@ -1,6 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type UserRole = "ORIX User" | "Fleet Manager" | "Finance Manager" | "IT Asset Manager" | "Viewer";
+export type UserRole =
+  | "ORIX User"
+  | "IT Asset Manager"
+  | "Vehicle Asset Manager"
+  | "Lease Manager"
+  | "Finance Manager"
+  | "Fleet Manager"
+  | "Viewer";
 
 export interface AppUser {
   id: string;
@@ -10,9 +17,14 @@ export interface AppUser {
   clientId?: string;
   clientName?: string;
   isAdmin: boolean;
-  accessLevel?: 'all' | 'multiple' | 'single';
+  isPortalUser?: boolean; // true for customer-facing portal accounts
+  accessLevel?: "all" | "multiple" | "single";
   allowedClients?: string[];
+  lastLogin?: string; // ISO string
+  lastActivity?: string;
 }
+
+/* ── Demo Users ────────────────────────────────────────────────────── */
 
 export const superadminUser: AppUser = {
   id: "u1",
@@ -20,7 +32,9 @@ export const superadminUser: AppUser = {
   email: "superadmin@orixindia.com",
   role: "ORIX User",
   isAdmin: true,
-  accessLevel: 'all',
+  accessLevel: "all",
+  lastLogin: new Date(Date.now() - 86400000).toISOString(),
+  lastActivity: "Viewed Finance Reports",
 };
 
 export const adminUser: AppUser = {
@@ -29,8 +43,54 @@ export const adminUser: AppUser = {
   email: "admin@orixindia.com",
   role: "ORIX User",
   isAdmin: true,
-  accessLevel: 'multiple',
-  allowedClients: ["c1", "c2"], // Qualtech Edge and Infosys
+  accessLevel: "multiple",
+  allowedClients: ["c1", "c2"],
+  lastLogin: new Date(Date.now() - 3600000 * 2).toISOString(),
+  lastActivity: "Updated Lease Contract LC-2891",
+};
+
+export const itManagerUser: AppUser = {
+  id: "u5",
+  name: "Arjun Sharma",
+  email: "arjun@orixindia.com",
+  role: "IT Asset Manager",
+  isAdmin: false,
+  accessLevel: "all",
+  lastLogin: new Date(Date.now() - 3600000 * 5).toISOString(),
+  lastActivity: "Added 3 IT Assets",
+};
+
+export const vehicleManagerUser: AppUser = {
+  id: "u6",
+  name: "Priya Nair",
+  email: "priya@orixindia.com",
+  role: "Vehicle Asset Manager",
+  isAdmin: false,
+  accessLevel: "all",
+  lastLogin: new Date(Date.now() - 3600000 * 8).toISOString(),
+  lastActivity: "Scheduled Maintenance — MH-01-AB-1234",
+};
+
+export const leaseManagerUser: AppUser = {
+  id: "u7",
+  name: "Rahul Mehta",
+  email: "rahul@orixindia.com",
+  role: "Lease Manager",
+  isAdmin: false,
+  accessLevel: "all",
+  lastLogin: new Date(Date.now() - 3600000 * 3).toISOString(),
+  lastActivity: "Created Lease LC-3021 for Wipro",
+};
+
+export const financeManagerUser: AppUser = {
+  id: "u8",
+  name: "Sneha Iyer",
+  email: "sneha@orixindia.com",
+  role: "Finance Manager",
+  isAdmin: false,
+  accessLevel: "all",
+  lastLogin: new Date(Date.now() - 3600000 * 6).toISOString(),
+  lastActivity: "Generated Invoice INV-20045",
 };
 
 export const clientUser: AppUser = {
@@ -41,7 +101,10 @@ export const clientUser: AppUser = {
   clientId: "c1",
   clientName: "Qualtech Edge Ltd",
   isAdmin: false,
-  accessLevel: 'single',
+  isPortalUser: true,
+  accessLevel: "single",
+  lastLogin: new Date(Date.now() - 3600000 * 4).toISOString(),
+  lastActivity: "Downloaded Invoice INV-20041",
 };
 
 export const relianceUser: AppUser = {
@@ -52,12 +115,25 @@ export const relianceUser: AppUser = {
   clientId: "c3",
   clientName: "Reliance Industries",
   isAdmin: false,
-  accessLevel: 'single',
+  isPortalUser: true,
+  accessLevel: "single",
+  lastLogin: new Date(Date.now() - 3600000 * 12).toISOString(),
+  lastActivity: "Raised Service Request SR-4521",
 };
+
+export type LoginType =
+  | "superadmin"
+  | "admin"
+  | "it-manager"
+  | "vehicle-manager"
+  | "lease-manager"
+  | "finance-manager"
+  | "client"
+  | "reliance";
 
 interface AuthContextType {
   user: AppUser | null;
-  login: (type: "superadmin" | "admin" | "client" | "reliance") => void;
+  login: (type: LoginType) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -69,17 +145,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user?.clientId) {
-      document.documentElement.setAttribute('data-theme', user.clientId);
+      document.documentElement.setAttribute("data-theme", user.clientId);
     } else {
-      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.removeAttribute("data-theme");
     }
   }, [user]);
 
-  const login = (type: "superadmin" | "admin" | "client" | "reliance") => {
-    if (type === "superadmin") setUser(superadminUser);
-    if (type === "admin") setUser(adminUser);
-    if (type === "client") setUser(clientUser);
-    if (type === "reliance") setUser(relianceUser);
+  const login = (type: LoginType) => {
+    const now = new Date().toISOString();
+    const userMap: Record<LoginType, AppUser> = {
+      superadmin: { ...superadminUser, lastLogin: now },
+      admin: { ...adminUser, lastLogin: now },
+      "it-manager": { ...itManagerUser, lastLogin: now },
+      "vehicle-manager": { ...vehicleManagerUser, lastLogin: now },
+      "lease-manager": { ...leaseManagerUser, lastLogin: now },
+      "finance-manager": { ...financeManagerUser, lastLogin: now },
+      client: { ...clientUser, lastLogin: now },
+      reliance: { ...relianceUser, lastLogin: now },
+    };
+    setUser(userMap[type]);
   };
 
   const logout = () => setUser(null);

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { SaveReportModal } from "@/components/SaveReportModal";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Search, Download, MessageSquarePlus, Save } from "lucide-react";
+import { Search, Download, MessageSquarePlus, Save, CreditCard, Building2, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -41,9 +41,16 @@ const Invoices = () => {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const handlePayNow = (inv: any) => {
+    setSelectedInvoice(inv);
+    setPaymentModalOpen(true);
+  };
 
   const filtered = invoices.filter((inv) => {
     if (statusFilter.length > 0 && !statusFilter.includes(inv.status)) return false;
@@ -53,21 +60,24 @@ const Invoices = () => {
     return true;
   });
 
-  const totalPaid = invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + i.amount, 0);
+  const currentYear = new Date().getFullYear();
+  const totalPaidYTD = invoices
+    .filter(i => i.status === 'Paid' && i.paidDate && i.paidDate.startsWith(currentYear.toString()))
+    .reduce((s, i) => s + i.amount, 0);
   const totalPending = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + i.amount, 0);
   const totalOverdue = invoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + i.amount, 0);
 
   const handleDownloadInvoice = (inv: any) => {
     const doc = new jsPDF();
-    
+
     doc.setFontSize(20);
     doc.text("INVOICE", 14, 22);
-    
+
     doc.setFontSize(10);
     doc.text(`Invoice No: ${inv.invoiceNo}`, 14, 30);
     doc.text(`Date: ${inv.generatedDate}`, 14, 35);
     doc.text(`Due Date: ${inv.dueDate}`, 14, 40);
-    
+
     doc.text("BILLED TO:", 14, 50);
     doc.text(`${inv.clientName}`, 14, 55);
     doc.text(`Lease ID: ${inv.contractNo}`, 14, 60);
@@ -88,7 +98,7 @@ const Invoices = () => {
 
     const finalY = (doc as any).lastAutoTable.finalY || 100;
     doc.text(`Status: ${inv.status.toUpperCase()}`, 14, finalY + 10);
-    
+
     doc.save(`Invoice_${inv.invoiceNo}.pdf`);
     toast({ title: "Connecting to server...", description: `Downloading ${inv.invoiceNo}` });
   };
@@ -112,8 +122,8 @@ const Invoices = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="kpi-card">
-          <p className="text-xs text-muted-foreground">Paid</p>
-          <p className="text-xl font-bold font-heading text-success mt-1">{formatCurrency(totalPaid)}</p>
+          <p className="text-xs text-muted-foreground">Paid(YTD)</p>
+          <p className="text-xl font-bold font-heading text-success mt-1">{formatCurrency(totalPaidYTD)}</p>
         </div>
         <div className="kpi-card">
           <p className="text-xs text-muted-foreground">Pending</p>
@@ -142,9 +152,9 @@ const Invoices = () => {
           ]}
         />
         <div className="flex items-center gap-2">
-          <Input type="date" value={dateRange.start} onChange={(e) => setDateRange({...dateRange, start: e.target.value})} className="h-9 text-xs" title="From Date (Due Date)" />
+          <Input type="date" value={dateRange.start} onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })} className="h-9 text-xs" title="From Date (Due Date)" />
           <span className="text-muted-foreground text-xs">to</span>
-          <Input type="date" value={dateRange.end} onChange={(e) => setDateRange({...dateRange, end: e.target.value})} className="h-9 text-xs" title="To Date (Due Date)" />
+          <Input type="date" value={dateRange.end} onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })} className="h-9 text-xs" title="To Date (Due Date)" />
         </div>
       </div>
 
@@ -162,7 +172,7 @@ const Invoices = () => {
               <th>Due Date</th>
               <th>Paid Date</th>
               <th>Status</th>
-              <th>Download Invoice</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -189,10 +199,15 @@ const Invoices = () => {
                   </span>
                 </td>
                 <td>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary" onClick={() => handleDownloadInvoice(inv)}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary hover:bg-primary/5" onClick={() => handleDownloadInvoice(inv)}>
                       <Download className="h-3.5 w-3.5" /> PDF
                     </Button>
+                    {(inv.status === 'Pending' || inv.status === 'Overdue') && user?.isPortalUser && (
+                      <Button variant="default" size="sm" className="h-7 text-xs bg-primary/10 text-primary hover:bg-primary/20" onClick={() => handlePayNow(inv)}>
+                        Pay Now
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -201,6 +216,49 @@ const Invoices = () => {
         </table>
       </div>
       <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Invoices" activeFilters={{ search, status: statusFilter.join(','), "start_date": dateRange.start, "end_date": dateRange.end, client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
+
+      {/* Payment Flow Dialog */}
+      <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Make Payment</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Select payment method for invoice <span className="font-semibold text-foreground">{selectedInvoice?.invoiceNo}</span>
+              <br /> Amount Due: <span className="font-bold text-foreground">{formatCurrency(selectedInvoice?.amount || 0)}</span>
+            </p>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <button
+              className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
+              onClick={() => {
+                toast({ title: "Redirecting...", description: "Connecting to Credit payment gateway." });
+                setPaymentModalOpen(false);
+              }}
+            >
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <Building2 className="h-6 w-6" />
+              </div>
+              <span className="font-semibold text-sm">Credit Card</span>
+            </button>
+
+            <button
+              className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
+              onClick={() => {
+                toast({ title: "Redirecting...", description: "Opening UPI apps." });
+                setPaymentModalOpen(false);
+              }}
+            >
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <Smartphone className="h-6 w-6" />
+              </div>
+              <span className="font-semibold text-sm">UPI Apps</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-center text-muted-foreground mt-4">
+            Payments are processed securely. Your transaction will be reflected instantly.
+          </p>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Monitor, Search, Cpu, HardDrive, Download, Save } from "lucide-react";
+import { Monitor, Search, Cpu, HardDrive, Download, Save, MoreHorizontal, CalendarClock } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SaveReportModal } from "@/components/SaveReportModal";
 import { useFilter } from "@/contexts/FilterContext";
 
@@ -26,7 +27,7 @@ function downloadCSV(data: any[], filename: string) {
 const ITAssets = () => {
   const { assets } = useAppData();
   const { clientFilter, costCenterFilter, locationFilter } = useFilter();
-  const itAssets = assets.filter(a => a.type === 'IT');
+  const itAssets = assets.filter(a => a.type === 'IT Equipment');
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -41,7 +42,7 @@ const ITAssets = () => {
     <AppLayout>
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="page-title">IT Asset Management</h1>
+          <h1 className="page-title">IT Equipment Management</h1>
           <p className="page-description">Track hardware and software assets, allocation, and compliance</p>
         </div>
         <div className="flex gap-2">
@@ -60,7 +61,7 @@ const ITAssets = () => {
             <Monitor className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Total IT Assets</p>
+            <p className="text-xs text-muted-foreground">Total IT Equipment</p>
             <p className="text-xl font-bold font-heading">{itAssets.length}</p>
           </div>
         </div>
@@ -90,7 +91,7 @@ const ITAssets = () => {
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search IT assets..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
+          <Input placeholder="Search IT equipment..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
         <MultiSelect
           placeholder="Category"
@@ -120,6 +121,7 @@ const ITAssets = () => {
               <th>Location</th>
               <th>Cost Center</th>
               <th>Lease Expiry</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -144,12 +146,27 @@ const ITAssets = () => {
                 <td>{a.location}</td>
                 <td className="text-muted-foreground">{a.costCenter}</td>
                 <td className="text-muted-foreground">{a.leaseEndDate}</td>
+                <td>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        <CalendarClock className="h-4 w-4 mr-2" />
+                        Reschedule
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <p className="text-center py-8 text-muted-foreground text-sm">No IT assets found</p>
+          <p className="text-center py-8 text-muted-foreground text-sm">No IT equipment found</p>
         )}
       </div>
       <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="IT Assets" activeFilters={{ search, category: categoryFilter.join(','), client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />

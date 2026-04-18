@@ -73,8 +73,8 @@ const Assets = () => {
             <Monitor className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">IT Assets</p>
-            <p className="text-xl font-bold font-heading">{assets.filter(a => a.type === 'IT').length}</p>
+            <p className="text-xs text-muted-foreground">IT Equipment</p>
+            <p className="text-xl font-bold font-heading">{assets.filter(a => a.type === 'IT Equipment').length}</p>
           </div>
         </div>
         <div className="kpi-card flex items-center gap-3">
@@ -106,7 +106,7 @@ const Assets = () => {
           onChange={setTypeFilter}
           options={[
             { label: "Vehicle", value: "Vehicle" },
-            { label: "IT Asset", value: "IT" },
+            { label: "IT Equipment", value: "IT Equipment" },
           ]}
         />
         <MultiSelect

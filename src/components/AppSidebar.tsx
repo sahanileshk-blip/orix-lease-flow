@@ -1,53 +1,50 @@
 import {
-  LayoutDashboard,
-  Car,
-  Monitor,
-  FileText,
-  Receipt,
-  FileBarChart,
-  TicketPlus,
-  FolderOpen,
-  Bell,
-  User,
-  Users,
-  Calculator,
-  LogOut,
-  HelpCircle,
+  LayoutDashboard, Car, Monitor, FileText, Receipt,
+  FileBarChart, TicketPlus, FolderOpen, Bell, User, Users,
+  Calculator, LogOut, HelpCircle, CreditCard, TrendingUp,
+  ShieldCheck, BarChart2, Wrench, Home, Store,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+  SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
+import type { UserRole } from "@/contexts/AuthContext";
 
-const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Vehicle Fleet", url: "/vehicles", icon: Car },
-  { title: "IT Assets", url: "/it-assets", icon: Monitor },
-  { title: "Lease Management", url: "/contracts", icon: FileText },
-  { title: "Create lease request", url: "/quotes", icon: Calculator },
-  { title: "Invoices", url: "/invoices", icon: Receipt },
-  { title: "Custom Reports", url: "/reports", icon: FileBarChart },
-  { title: "Service Requests", url: "/tickets", icon: TicketPlus },
-  { title: "Documents", url: "/documents", icon: FolderOpen },
-  { title: "Notifications", url: "/notifications", icon: Bell, state: { tab: 'settings' } },
-  { title: "Profile", url: "/profile", icon: User },
-  { title: "FAQ", url: "/faq", icon: HelpCircle },
+/* ── ERP nav items per role ──────────────────────────────────────── */
+const allErpItems = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["all"] },
+  { title: "Vehicle Fleet", url: "/vehicles", icon: Car, roles: ["ORIX User", "Vehicle Asset Manager", "Fleet Manager"] },
+  { title: "IT Assets", url: "/it-assets", icon: Monitor, roles: ["ORIX User", "IT Asset Manager", "Fleet Manager"] },
+  { title: "Lease Management", url: "/contracts", icon: FileText, roles: ["ORIX User", "Lease Manager", "Finance Manager", "Fleet Manager"] },
+  { title: "Request Quotation", url: "/quotes", icon: Calculator, roles: ["ORIX User", "Lease Manager", "Fleet Manager"] },
+  { title: "Invoices", url: "/invoices", icon: Receipt, roles: ["ORIX User", "Finance Manager", "Lease Manager", "Fleet Manager"] },
+  { title: "Custom Reports", url: "/reports", icon: FileBarChart, roles: ["ORIX User", "Finance Manager", "Fleet Manager"] },
+  { title: "Service Requests", url: "/tickets", icon: TicketPlus, roles: ["all"] },
+  { title: "Document Centre", url: "/documents", icon: FolderOpen, roles: ["all"] },
+  { title: "Notifications", url: "/notifications", icon: Bell, roles: ["all"], state: { tab: "settings" } },
+  { title: "Profile", url: "/profile", icon: User, roles: ["all"] },
+  { title: "FAQ", url: "/faq", icon: HelpCircle, roles: ["all"] },
 ];
 
-const adminItems = [
-  { title: "User Management", url: "/users", icon: Users },
+const adminItems = [{ title: "User Management", url: "/users", icon: Users }];
+
+/* ── Customer Portal nav ─────────────────────────────────────────── */
+const portalItems = [
+  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Dealer Portal", url: "/portal/dealers", icon: Store },
+  { title: "Billing & Payments", url: "/portal/billing", icon: CreditCard },
+  { title: "Lease Progress", url: "/portal/progress", icon: TrendingUp },
+  { title: "Service Requests", url: "/portal/service-requests", icon: Wrench },
+  { title: "RV Payments", url: "/portal/rv-payments", icon: BarChart2 },
+  { title: "Insurance & Maint.", url: "/portal/insurance", icon: ShieldCheck },
+  { title: "Vehicle Closures", url: "/portal/closures", icon: Car },
+  { title: "Document Centre", url: "/portal/documents", icon: FolderOpen },
+  { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "Profile", url: "/profile", icon: User },
 ];
 
 export function AppSidebar() {
@@ -56,28 +53,36 @@ export function AppSidebar() {
   const location = useLocation();
   const { user, logout } = useAuth();
 
+  const isPortal = !!user?.isPortalUser;
+
+  /* Filter ERP items by role */
+  const role: UserRole = user?.role ?? "ORIX User";
+  const visibleErpItems = allErpItems.filter(i =>
+    i.roles.includes("all") || i.roles.includes(role) || user?.isAdmin
+  );
+
+  const navItems = visibleErpItems;
+
+  const linkClass = (active: boolean) =>
+    `flex items-center rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors
+     ${collapsed ? "justify-center w-8 h-8 mx-auto" : "gap-3 px-3 py-2 w-full"}
+     ${active ? "bg-sidebar-accent text-sidebar-primary font-medium" : ""}`;
+
   return (
     <Sidebar
       collapsible="icon"
       onMouseEnter={() => !isMobile && setOpen(true)}
       onMouseLeave={() => !isMobile && setOpen(false)}
     >
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        <div className="flex items-center justify-between">
+      <SidebarHeader className={`border-b border-sidebar-border py-4 transition-all duration-300 ${collapsed ? "px-0" : "px-4"}`}>
+        <div className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}>
+          <div className="h-9 w-9 flex items-center justify-center p-1.5 bg-white rounded-lg border border-sidebar-border shadow-sm overflow-hidden shrink-0">
+            <img src="/orix-logo-original.png" alt="ORIX" className="w-full h-full object-contain" />
+          </div>
           {!collapsed && (
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground font-heading font-bold text-sm">
-                OX
-              </div>
-              <div>
-                <p className="font-heading font-bold text-sm text-[#ce1439]">ORIX India</p>
-                <p className="text-[10px] text-sidebar-muted">Customer Service Portal</p>
-              </div>
-            </div>
-          )}
-          {collapsed && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground font-heading font-bold text-sm mx-auto">
-              OX
+            <div className="flex-1 min-w-0">
+              <p className="font-heading font-bold text-sm text-[#ce1439] leading-tight truncate">ORIX India</p>
+              <p className="text-[10px] text-sidebar-muted truncate">{isPortal ? "Customer Portal" : "Enterprise Portal"}</p>
             </div>
           )}
         </div>
@@ -85,18 +90,19 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2 py-2">
         <SidebarGroup>
-          {/* <SidebarGroupLabel>Main</SidebarGroupLabel> */}
+          {/* {!collapsed && !isPortal && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider">Main</SidebarGroupLabel>}
+          {!collapsed && isPortal && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider">Portal</SidebarGroupLabel>} */}
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {navItems.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      state={item.state}
-                      end={item.url === "/"}
-                      className={`flex items-center rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors ${collapsed ? 'justify-center w-8 h-8 mx-auto' : 'gap-3 px-3 py-2 w-full'}`}
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                      state={"state" in item ? item.state : undefined}
+                      end={item.url === "/" || item.url === "/portal"}
+                      className={({ isActive }: { isActive: boolean }) => linkClass(isActive)}
+                      activeClassName=""
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span className="text-sm">{item.title}</span>}
@@ -108,20 +114,18 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {user?.isAdmin && (
+        {user?.isAdmin && !isPortal && (
           <SidebarGroup>
-            {!collapsed && (
-              <SidebarGroupLabel>Admin</SidebarGroupLabel>
-            )}
+            {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider">Admin</SidebarGroupLabel>}
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminItems.map((item) => (
+                {adminItems.map(item => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                        className={`flex items-center rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors ${collapsed ? 'justify-center w-8 h-8 mx-auto' : 'gap-3 px-3 py-2 w-full'}`}
-                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        className={({ isActive }: { isActive: boolean }) => linkClass(isActive)}
+                        activeClassName=""
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
                         {!collapsed && <span className="text-sm">{item.title}</span>}
@@ -139,11 +143,11 @@ export function AppSidebar() {
         {!collapsed && user && (
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-medium text-sidebar-accent-foreground">
-              {user.name.split(' ').map(n => n[0]).join('')}
+              {user.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-sidebar-foreground truncate">{user.name}</p>
-              <p className="text-[10px] text-sidebar-muted truncate">{user.role}</p>
+              {!isPortal && <p className="text-[10px] text-sidebar-muted truncate">{user.role}</p>}
             </div>
             <button onClick={logout} className="p-1.5 rounded hover:bg-sidebar-accent transition-colors" title="Sign out">
               <LogOut className="h-3.5 w-3.5 text-sidebar-muted" />

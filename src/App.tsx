@@ -7,6 +7,9 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { ReportProvider } from "@/contexts/ReportContext";
+import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
+
+// ERP pages
 import Dashboard from "./pages/Dashboard";
 import VehicleFleet from "./pages/VehicleFleet";
 import ITAssets from "./pages/ITAssets";
@@ -22,6 +25,18 @@ import UserManagement from "./pages/UserManagement";
 import Login from "./pages/Login";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
+import LeaseDetail from "./pages/LeaseDetail";
+
+// Customer portal pages
+import PortalWelcome from "./pages/portal/PortalWelcome";
+import DealerPortal from "./pages/portal/DealerPortal";
+import VehicleClosures from "./pages/portal/VehicleClosures";
+import BillingPayments from "./pages/portal/BillingPayments";
+import LeaseProgress from "./pages/portal/LeaseProgress";
+import ServiceRequests from "./pages/portal/ServiceRequests";
+import RVPayments from "./pages/portal/RVPayments";
+import InsuranceMaintenance from "./pages/portal/InsuranceMaintenance";
+import PortalDocuments from "./pages/portal/PortalDocuments";
 
 const queryClient = new QueryClient();
 
@@ -38,26 +53,53 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function PortalRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!user?.isPortalUser) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
+  // Everyone lands on /
+  const defaultRedirect = "/";
+
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/vehicles" element={<ProtectedRoute><VehicleFleet /></ProtectedRoute>} />
-      <Route path="/it-assets" element={<ProtectedRoute><ITAssets /></ProtectedRoute>} />
-      <Route path="/contracts" element={<ProtectedRoute><Contracts /></ProtectedRoute>} />
-      <Route path="/quotes" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
-      <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
-      <Route path="/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-      <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to={defaultRedirect} replace /> : <Login />} />
+
+      {/* ERP & Portal Shared Dashboard */}
+      <Route path="/"           element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      
+      {/* ERP Routes */}
+      <Route path="/vehicles"   element={<ProtectedRoute><VehicleFleet /></ProtectedRoute>} />
+      <Route path="/it-assets"  element={<ProtectedRoute><ITAssets /></ProtectedRoute>} />
+      <Route path="/contracts"  element={<ProtectedRoute><Contracts /></ProtectedRoute>} />
+      <Route path="/quotes"     element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
+      <Route path="/invoices"   element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+      <Route path="/tickets"    element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
+      <Route path="/reports"    element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+      <Route path="/documents"  element={<ProtectedRoute><Documents /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/faq" element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
-      <Route path="/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
-      <Route path="/assets" element={<Navigate to="/vehicles" replace />} />
+      <Route path="/profile"    element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/faq"        element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
+      <Route path="/users"      element={<AdminRoute><UserManagement /></AdminRoute>} />
+      <Route path="/assets"     element={<Navigate to="/vehicles" replace />} />
+
+      {/* Customer Portal Routes */}
+      <Route path="/portal"                  element={<Navigate to="/" replace />} />
+      <Route path="/portal/dealers"          element={<PortalRoute><DealerPortal /></PortalRoute>} />
+      <Route path="/portal/closures"         element={<PortalRoute><VehicleClosures /></PortalRoute>} />
+      <Route path="/portal/billing"          element={<PortalRoute><BillingPayments /></PortalRoute>} />
+      <Route path="/portal/progress"         element={<PortalRoute><LeaseProgress /></PortalRoute>} />
+      <Route path="/leases/:id"              element={<ProtectedRoute><LeaseDetail /></ProtectedRoute>} />
+      <Route path="/portal/service-requests" element={<PortalRoute><ServiceRequests /></PortalRoute>} />
+      <Route path="/portal/rv-payments"      element={<PortalRoute><RVPayments /></PortalRoute>} />
+      <Route path="/portal/insurance"        element={<PortalRoute><InsuranceMaintenance /></PortalRoute>} />
+      <Route path="/portal/documents"        element={<PortalRoute><PortalDocuments /></PortalRoute>} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -69,13 +111,15 @@ const App = () => (
       <ThemeProvider>
         <FilterProvider>
           <ReportProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
+            <PersonalizationProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AppRoutes />
+                </BrowserRouter>
+              </TooltipProvider>
+            </PersonalizationProvider>
           </ReportProvider>
         </FilterProvider>
       </ThemeProvider>
