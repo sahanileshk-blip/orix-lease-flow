@@ -10,7 +10,8 @@ import {
   costCenters,
   locations,
   clients,
-  faqItems
+  faqItems,
+  auditLogs
 } from "@/data/sampleData";
 
 import { useFilter } from "@/contexts/FilterContext";
@@ -20,7 +21,7 @@ export function useAppData() {
   const { clientFilter, costCenterFilter, locationFilter, leaseStatusFilter } = useFilter();
 
   if (!user) {
-    return { assets: [], contracts: [], invoices: [], tickets: [], documents: [], notifications: [], dashboardKPIs, costCenters, locations, clients, faqItems };
+    return { assets: [], contracts: [], invoices: [], tickets: [], documents: [], notifications: [], dashboardKPIs, costCenters, locations, clients, faqItems, auditLogs: [] };
   }
 
   const applyUniversalFilter = (item: any) => {
@@ -84,9 +85,9 @@ export function useAppData() {
     documents: fDocuments,
     notifications, // kept global
     dashboardKPIs: dynamicKPIs,
-    costCenters,
     locations,
     clients: clients.filter(c => allowedClients.includes(c.id)),
-    faqItems
+    faqItems,
+    auditLogs
   };
 }

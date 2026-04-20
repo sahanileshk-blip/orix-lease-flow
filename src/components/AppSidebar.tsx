@@ -30,7 +30,10 @@ const allErpItems = [
   { title: "FAQ", url: "/faq", icon: HelpCircle, roles: ["all"] },
 ];
 
-const adminItems = [{ title: "User Management", url: "/users", icon: Users }];
+const adminItems = [
+  { title: "User Management", url: "/users", icon: Users, roles: ["all"] },
+  { title: "Audit Log", url: "/audit-log", icon: ShieldCheck, roles: ["IT Admin (ORIX)"] }
+];
 
 /* ── Individual User nav (5 modules only) ────────────────────────── */
 const individualItems = [
@@ -77,6 +80,10 @@ export function AppSidebar() {
     `flex items-center rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors
      ${collapsed ? "justify-center w-8 h-8 mx-auto" : "gap-3 px-3 py-2 w-full"}
      ${active ? "bg-sidebar-accent text-sidebar-primary font-medium" : ""}`;
+
+  const visibleAdminItems = adminItems.filter(i =>
+    i.roles.includes("all") || i.roles.includes(role)
+  );
 
   return (
     <Sidebar
@@ -131,7 +138,7 @@ export function AppSidebar() {
             {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider">Admin</SidebarGroupLabel>}
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminItems.map(item => (
+                {visibleAdminItems.map(item => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink

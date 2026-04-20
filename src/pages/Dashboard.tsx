@@ -174,7 +174,7 @@ const Dashboard = () => {
   }, [expiringLeases, expiryWindow]);
 
   /* ── Role-aware KPI definitions ── */
-  const role = user?.role ?? "ORIX User";
+  const role = user?.role ?? "RM - Orix";
   const isAdmin = user?.isAdmin;
   const isPortalUser = user?.isPortalUser;
 
@@ -263,7 +263,7 @@ const Dashboard = () => {
         <KPICard label={isPortalUser ? "Active Assets" : "Total Assets"} value={isPortalUser ? dashboardKPIs.assetsByStatus.Active : dashboardKPIs.totalAssets}
           icon={<Car className="h-5 w-5 text-accent" />} iconBg="bg-accent/10"
           trend={{ direction: "up", percent: 4 }}
-          insight={isPortalUser ? `${dashboardKPIs.assetsByStatus.Active} assets currently active in your fleet.` : `${dashboardKPIs.assetsByType.Vehicle} vehicles · ${dashboardKPIs.assetsByType.IT} IT — all tracked.`}
+          insight={isPortalUser ? `${dashboardKPIs.assetsByStatus.Active} assets currently active in your fleet.` : `${dashboardKPIs.assetsByType.Vehicle} vehicles · ${dashboardKPIs.assetsByType['IT Equipment']} IT — all tracked.`}
           onClick={openAssetsDrill} />
         <KPICard label={isPortalUser ? "Active Lease value" : "Total Lease Value"} value={formatCurrency(isPortalUser ? (dashboardKPIs as any).activeLeaseValue : dashboardKPIs.totalLeaseValue)}
           icon={<IndianRupee className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20"
@@ -354,8 +354,9 @@ const Dashboard = () => {
       {/* ── Portal Modules (Clients Only) ── */}
       {/* Portal Modules temporarily removed per user request */}
 
-      {/* ── Recent Activity ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      {/* ── Recent Activity (Tickets & Alerts) ── */}
+      {role !== "IT Admin (ORIX)" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <div className="bg-card rounded-lg border p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-heading font-semibold text-sm flex items-center gap-2">
@@ -407,6 +408,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* ── KPI Cards ── */}
       <div className="mb-4">{renderKPIs()}</div>
@@ -414,7 +416,7 @@ const Dashboard = () => {
       {/* ── Charts ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         {/* Asset Distribution Pie */}
-        {(isAdmin || isPortalUser || role === "ORIX User" || role === "IT Asset Manager" || role === "Vehicle Asset Manager") && (
+        {(isAdmin || isPortalUser || role === "RM - Orix" || role === "IT Asset Manager" || role === "Vehicle Asset Manager") && (
           <div className="bg-card rounded-lg border p-5">
             <h3 className="font-heading font-semibold text-sm mb-4">Asset Distribution by Category</h3>
             <ResponsiveContainer width="100%" height={260}>

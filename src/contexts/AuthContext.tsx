@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type UserRole =
-  | "ORIX User"
+  | "IT Admin (ORIX)"
+  | "RM - Orix"
   | "IT Asset Manager"
   | "Vehicle Asset Manager"
   | "Lease Manager"
@@ -29,9 +30,9 @@ export interface AppUser {
 
 export const superadminUser: AppUser = {
   id: "u1",
-  name: "System Admin",
+  name: "IT Admin (ORIX)",
   email: "superadmin@orixindia.com",
-  role: "ORIX User",
+  role: "IT Admin (ORIX)",
   isAdmin: true,
   accessLevel: "all",
   lastLogin: new Date(Date.now() - 86400000).toISOString(),
@@ -40,9 +41,9 @@ export const superadminUser: AppUser = {
 
 export const adminUser: AppUser = {
   id: "u2",
-  name: "Account Manager",
+  name: "RM - Orix",
   email: "admin@orixindia.com",
-  role: "ORIX User",
+  role: "RM - Orix",
   isAdmin: true,
   accessLevel: "multiple",
   allowedClients: ["c1", "c2"],

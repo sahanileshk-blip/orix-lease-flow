@@ -316,3 +316,105 @@ export const individualLeaseData = {
   hrManagerEmail: 'rajesh@qualtechedge.com',
 };
 
+export interface AuditLogEntry {
+  id: string;
+  userName: string;
+  userRole: string;
+  action: 'Created' | 'Updated' | 'Deleted' | 'Logged In' | 'Logged Out' | 'Exported' | 'Viewed';
+  module: string;
+  recordAffected: string;
+  timestamp: string; // ISO string
+  ipAddress: string;
+  status: 'Success' | 'Failed' | 'Denied';
+}
+
+export const auditLogs: AuditLogEntry[] = [
+  {
+    id: 'L1',
+    userName: 'IT Admin (ORIX)',
+    userRole: 'IT Admin (ORIX)',
+    action: 'Logged In',
+    module: 'Authentication',
+    recordAffected: 'N/A',
+    timestamp: new Date().toISOString(),
+    ipAddress: '192.168.1.105',
+    status: 'Success'
+  },
+  {
+    id: 'L2',
+    userName: 'RM - Orix',
+    userRole: 'RM - Orix',
+    action: 'Created',
+    module: 'Lease Management',
+    recordAffected: 'OL-2024-501',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    ipAddress: '192.168.1.112',
+    status: 'Success'
+  },
+  {
+    id: 'L3',
+    userName: 'Finance Manager',
+    userRole: 'Finance Manager',
+    action: 'Exported',
+    module: 'Reports',
+    recordAffected: 'Monthly Revenue Q1',
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+    ipAddress: '192.168.1.15',
+    status: 'Success'
+  },
+  {
+    id: 'L4',
+    userName: 'Individual User – Qualtech',
+    userRole: 'Viewer',
+    action: 'Logged In',
+    module: 'Authentication',
+    recordAffected: 'N/A',
+    timestamp: new Date(Date.now() - 10800000).toISOString(),
+    ipAddress: '122.160.45.12',
+    status: 'Success'
+  },
+  {
+    id: 'L5',
+    userName: 'HR Manager – Qualtech',
+    userRole: 'Fleet Manager',
+    action: 'Updated',
+    module: 'Vehicle Fleet',
+    recordAffected: 'VH-001',
+    timestamp: new Date(Date.now() - 14400000).toISOString(),
+    ipAddress: '103.20.45.88',
+    status: 'Success'
+  },
+  {
+    id: 'L6',
+    userName: 'System Admin',
+    userRole: 'IT Admin (ORIX)',
+    action: 'Deleted',
+    module: 'User Management',
+    recordAffected: 'Test User 2',
+    timestamp: new Date(Date.now() - 18000000).toISOString(),
+    ipAddress: '192.168.1.105',
+    status: 'Denied'
+  },
+  {
+    id: 'L7',
+    userName: 'RM - Orix',
+    userRole: 'RM - Orix',
+    action: 'Updated',
+    module: 'Invoices',
+    recordAffected: 'INV-3051',
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    ipAddress: '192.168.1.112',
+    status: 'Success'
+  },
+  {
+    id: 'L8',
+    userName: 'IT Admin (ORIX)',
+    userRole: 'IT Admin (ORIX)',
+    action: 'Logged In',
+    module: 'Authentication',
+    recordAffected: 'N/A',
+    timestamp: new Date(Date.now() - 90000000).toISOString(),
+    ipAddress: '192.168.1.105',
+    status: 'Failed'
+  }
+];

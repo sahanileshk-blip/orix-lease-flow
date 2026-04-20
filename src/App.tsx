@@ -25,6 +25,7 @@ import Profile from "./pages/Profile";
 import UserManagement from "./pages/UserManagement";
 import Login from "./pages/Login";
 import FAQ from "./pages/FAQ";
+import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 import LeaseDetail from "./pages/LeaseDetail";
 
@@ -103,6 +104,7 @@ function AppRoutes() {
       <Route path="/profile"    element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/faq"        element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
       <Route path="/users"      element={<AdminRoute><UserManagement /></AdminRoute>} />
+      <Route path="/audit-log"  element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
       <Route path="/assets"     element={<Navigate to="/vehicles" replace />} />
 
       {/* Customer Portal Routes */}
