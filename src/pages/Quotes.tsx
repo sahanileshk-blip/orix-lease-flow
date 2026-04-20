@@ -46,7 +46,7 @@ interface Quote {
 
 const sampleQuotes: Quote[] = [
   { id: 'q1', quotationCode: 'QT-2026-001', enquiryCode: 'ENQ-001', customerName: 'Qualtech Edge Ltd', productType: 'FL', leaseTenure: 36, interestRate: 9.5, assetCost: 1500000, monthlyRental: 48500, totalLeaseValue: 1746000, status: 'Approved', createdAt: '2026-03-15' },
-  { id: 'q2', quotationCode: 'QT-2026-002', enquiryCode: 'ENQ-002', customerName: 'Infosys Technologies', productType: 'FL', leaseTenure: 24, interestRate: 10, assetCost: 800000, monthlyRental: 37200, totalLeaseValue: 892800, status: 'Pending', createdAt: '2026-04-01' },
+  { id: 'q2', quotationCode: 'QT-2026-002', enquiryCode: 'ENQ-002', customerName: 'Reliance Industries', productType: 'FL', leaseTenure: 24, interestRate: 10, assetCost: 800000, monthlyRental: 37200, totalLeaseValue: 892800, status: 'Pending', createdAt: '2026-04-01' },
   { id: 'q3', quotationCode: 'QT-2026-003', enquiryCode: 'ENQ-003', customerName: 'Reliance Industries', productType: 'FL', leaseTenure: 48, interestRate: 9, assetCost: 2200000, monthlyRental: 54800, totalLeaseValue: 2630400, status: 'Expired', createdAt: '2026-04-10' },
   { id: 'q4', quotationCode: 'QT-2026-004', enquiryCode: 'ENQ-004', customerName: 'Wipro Limited', productType: 'FL', leaseTenure: 36, interestRate: 9.5, assetCost: 650000, monthlyRental: 21000, totalLeaseValue: 756000, status: 'Rejected', createdAt: '2026-04-05' },
 ];
@@ -103,7 +103,7 @@ const Quotes = () => {
     <AppLayout>
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="page-title">Request Quotation</h1>
+          <h1 className="page-title">{user?.role === "Fleet Manager" ? "Request Quotation" : "Quotations"}</h1>
           <p className="page-description">Create and manage lease requests</p>
         </div>
         <div className="flex gap-2">
@@ -113,14 +113,15 @@ const Quotes = () => {
           <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'lease-requests.csv')}>
             <Download className="h-4 w-4" /> Download CSV
           </Button>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-1.5"><Plus className="h-4 w-4" />Request</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Request Quotation</DialogTitle>
-              </DialogHeader>
+          {user?.isPortalUser && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-1.5"><Plus className="h-4 w-4" />Request</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{user?.role === "Fleet Manager" ? "Request Quotation" : "Quotation"}</DialogTitle>
+                </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4 mt-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -269,11 +270,12 @@ const Quotes = () => {
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                   <Button type="submit" variant="outline">Save as Draft</Button>
-                  <Button type="submit">Request Quotation</Button>
+                  <Button type="submit">Submit Quotation</Button>
                 </div>
               </form>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 

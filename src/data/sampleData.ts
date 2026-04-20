@@ -124,10 +124,7 @@ export const locations = [
 
 export const clients: Client[] = [
   { id: 'c1', name: 'Qualtech Edge Ltd', code: 'QUALTECH' },
-  { id: 'c2', name: 'Infosys Technologies', code: 'INFY' },
-  { id: 'c3', name: 'Reliance Industries', code: 'RIL' },
-  { id: 'c4', name: 'Wipro Limited', code: 'WIPRO' },
-  { id: 'c5', name: 'Mahindra & Mahindra', code: 'M&M' },
+  { id: 'c2', name: 'Reliance Industries', code: 'RIL' },
 ];
 
 const baseAssets: Asset[] = [
@@ -136,8 +133,18 @@ const baseAssets: Asset[] = [
   { id: 'a10', clientId: 'c1', clientName: 'Qualtech Edge Ltd', type: 'IT Equipment', assetTag: 'IT-005', description: 'Dell Optiplex 7090 MFF', status: 'Active', location: 'Mumbai', costCenter: 'CC-MUM-001', assignedTo: 'Sunita Rao', leaseStartDate: '2023-11-01', leaseEndDate: '2026-10-31', serialNo: 'DL7090-48492', category: 'Desktop', condition: 'Good', leaseStatus: 'Disbursed' },
 ];
 
+const now = new Date();
+const d15 = new Date(now.getTime() + 15 * 86400000).toISOString().split('T')[0];
+const d45 = new Date(now.getTime() + 45 * 86400000).toISOString().split('T')[0];
+const d75 = new Date(now.getTime() + 75 * 86400000).toISOString().split('T')[0];
+
 const baseContracts: Contract[] = [
   { id: 'ct1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-001', assetType: 'Vehicle', leaseType: 'OL', startDate: '2024-01-15', endDate: '2027-01-14', tenure: 36, monthlyRental: 45000, totalValue: 1620000, status: 'Disbursed', assetsCount: 2, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-dyn1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D1', assetType: 'Vehicle', leaseType: 'OL', startDate: '2021-01-15', endDate: d15, tenure: 36, monthlyRental: 20000, totalValue: 720000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-dyn2', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D2', assetType: 'IT Equipment', leaseType: 'OL', startDate: '2021-01-15', endDate: d45, tenure: 36, monthlyRental: 15000, totalValue: 540000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-dyn3', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D3', assetType: 'Vehicle', leaseType: 'OL', startDate: '2021-01-15', endDate: d75, tenure: 36, monthlyRental: 30000, totalValue: 1080000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-dyn4', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D4', assetType: 'Vehicle', leaseType: 'OL', startDate: '2021-01-15', endDate: d15, tenure: 36, monthlyRental: 22000, totalValue: 792000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-dyn5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D5', assetType: 'IT Equipment', leaseType: 'OL', startDate: '2021-01-15', endDate: d45, tenure: 36, monthlyRental: 12000, totalValue: 432000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
 ];
 
 const baseInvoices: Invoice[] = [
@@ -238,8 +245,8 @@ export const tickets: Ticket[] = [
   { id: 't5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-005', category: 'Vehicle', subject: 'Scheduled service due - VH-002', priority: 'Medium', status: 'Closed', createdAt: '2026-04-05', slaDeadline: '2026-04-10', assignedTo: 'ORIX Service Desk', costCenter: 'CC-DEL-002', location: 'Delhi', rating: 5, csatScore: 95 },
   { id: 't7', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-010', category: 'IT Equipment', subject: 'Laptop battery replacement - IT-005', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-12', slaDeadline: '2026-04-15', assignedTo: 'Hardware Ops', costCenter: 'CC-MUM-001', location: 'Mumbai' },
 
-  { id: 't2', clientId: 'c2', clientName: 'Infosys Technologies', ticketNo: 'SR-2026-002', category: 'IT', subject: 'Laptop screen flickering - IT-001', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-08', slaDeadline: '2026-04-13', assignedTo: 'Tech Support', costCenter: 'CC-BLR-003', location: 'Bangalore' },
-  { id: 't8', clientId: 'c2', clientName: 'Infosys Technologies', ticketNo: 'SR-2026-011', category: 'Lease', subject: 'Inquiry on bulk asset return', priority: 'Low', status: 'Open', createdAt: '2026-04-14', slaDeadline: '2026-04-20', assignedTo: 'Account Mgmt', costCenter: 'CC-BLR-003', location: 'Bangalore' },
+  { id: 't2', clientId: 'c2', clientName: 'Reliance Industries', ticketNo: 'SR-2026-002', category: 'IT', subject: 'Laptop screen flickering - IT-001', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-08', slaDeadline: '2026-04-13', assignedTo: 'Tech Support', costCenter: 'CC-BLR-003', location: 'Bangalore' },
+  { id: 't8', clientId: 'c2', clientName: 'Reliance Industries', ticketNo: 'SR-2026-011', category: 'Lease', subject: 'Inquiry on bulk asset return', priority: 'Low', status: 'Open', createdAt: '2026-04-14', slaDeadline: '2026-04-20', assignedTo: 'Account Mgmt', costCenter: 'CC-BLR-003', location: 'Bangalore' },
 ];
 
 export const documents: Document[] = [
@@ -251,7 +258,7 @@ export const documents: Document[] = [
 export const notifications: Notification[] = [
   { id: 'n1', title: 'Invoice Overdue', message: 'Invoice INV-2026-0301 for Reliance Industries is overdue by 42 days', type: 'error', read: false, createdAt: '2026-04-12T09:00:00' },
   { id: 'n2', title: 'Contract Expiring Soon', message: 'Contract OL-2023-015 (Reliance Industries) expires in 3 days', type: 'warning', read: false, createdAt: '2026-04-11T14:30:00' },
-  { id: 'n3', title: 'Payment Received', message: 'Payment of ₹28,000 received from Infosys Technologies', type: 'success', read: true, createdAt: '2026-04-10T10:15:00' },
+  { id: 'n3', title: 'Payment Received', message: 'Payment of ₹28,000 received from Reliance Industries', type: 'success', read: true, createdAt: '2026-04-10T10:15:00' },
 ];
 
 export const faqItems: FAQItem[] = [

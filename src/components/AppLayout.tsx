@@ -73,10 +73,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     onChange={setClientFilter}
                     options={[
                       { label: "Qualtech Edge Ltd",    value: "c1" },
-                      { label: "Infosys Technologies", value: "c2" },
-                      { label: "Reliance Industries",  value: "c3" },
-                      { label: "Wipro Limited",         value: "c4" },
-                      { label: "Mahindra & Mahindra",  value: "c5" },
+                      { label: "Reliance Industries",  value: "c2" },
                     ]}
                   />
                 </div>

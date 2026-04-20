@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 const users = [
   { id: 'u1', name: 'Admin Kumar', email: 'admin@orixindia.com', role: 'ORIX Admin', client: 'ORIX', status: 'Active' },
   { id: 'u2', name: 'Rajesh Verma', email: 'rajesh@tatamotors.com', role: 'Fleet Manager', client: 'Tata Motors Ltd', status: 'Active' },
-  { id: 'u3', name: 'Priya Mehta', email: 'priya@infosys.com', role: 'IT Manager', client: 'Infosys Technologies', status: 'Active' },
+  { id: 'u3', name: 'Priya Mehta', email: 'priya@reliance.com', role: 'IT Manager', client: 'Reliance Industries', status: 'Active' },
   { id: 'u4', name: 'Sunil Sharma', email: 'sunil@reliance.com', role: 'Finance Manager', client: 'Reliance Industries', status: 'Active' },
   { id: 'u5', name: 'Kavita Iyer', email: 'kavita@wipro.com', role: 'Viewer', client: 'Wipro Limited', status: 'Inactive' },
   { id: 'u6', name: 'Deepak Nair', email: 'deepak@mahindra.com', role: 'Fleet Manager', client: 'Mahindra & Mahindra', status: 'Active' },
@@ -82,7 +82,7 @@ const UserManagement = () => {
                   <SelectContent>
                     <SelectItem value="orix">ORIX (Admin)</SelectItem>
                     <SelectItem value="c1">Tata Motors Ltd</SelectItem>
-                    <SelectItem value="c2">Infosys Technologies</SelectItem>
+                    <SelectItem value="c2">Reliance Industries</SelectItem>
                     <SelectItem value="c3">Reliance Industries</SelectItem>
                     <SelectItem value="c4">Wipro Limited</SelectItem>
                     <SelectItem value="c5">Mahindra & Mahindra</SelectItem>

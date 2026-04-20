@@ -20,7 +20,7 @@ const allErpItems = [
   { title: "Vehicle Fleet", url: "/vehicles", icon: Car, roles: ["ORIX User", "Vehicle Asset Manager", "Fleet Manager"] },
   { title: "IT Assets", url: "/it-assets", icon: Monitor, roles: ["ORIX User", "IT Asset Manager", "Fleet Manager"] },
   { title: "Lease Management", url: "/contracts", icon: FileText, roles: ["ORIX User", "Lease Manager", "Finance Manager", "Fleet Manager"] },
-  { title: "Request Quotation", url: "/quotes", icon: Calculator, roles: ["ORIX User", "Lease Manager", "Fleet Manager"] },
+  { title: "Quotations", url: "/quotes", icon: Calculator, roles: ["all"] },
   { title: "Invoices", url: "/invoices", icon: Receipt, roles: ["ORIX User", "Finance Manager", "Lease Manager", "Fleet Manager"] },
   { title: "Custom Reports", url: "/reports", icon: FileBarChart, roles: ["ORIX User", "Finance Manager", "Fleet Manager"] },
   { title: "Service Requests", url: "/tickets", icon: TicketPlus, roles: ["all"] },
@@ -124,7 +124,11 @@ export function AppSidebar() {
                       activeClassName=""
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span className="text-sm">{item.title}</span>}
+                      {!collapsed && (
+                        <span className="text-sm">
+                          {item.url === "/quotes" && role === "Fleet Manager" ? "Request Quotation" : item.title}
+                        </span>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

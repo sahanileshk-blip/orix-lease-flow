@@ -1,10 +1,19 @@
 import { AppLayout } from "@/components/AppLayout";
 import { individualLeaseData as d } from "@/data/sampleData";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Car, CalendarClock, CreditCard, ShieldAlert, Wrench,
   TrendingDown, PhoneCall, Mail, AlertTriangle, CheckCircle2,
-  Clock, ChevronRight, BadgeCheck, Flame,
+  Clock, ChevronRight, BadgeCheck, Flame, TicketPlus, DollarSign,
+  IndianRupee, Building2, Smartphone
 } from "lucide-react";
 
 /* ── helpers ──────────────────────────────────────────────────────── */
@@ -32,9 +41,14 @@ const priorityBadge = (p: string) => {
 const statusIcon = (s: string) =>
   s === "Open" ? <Clock className="h-3.5 w-3.5 text-amber-400" /> : <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" />;
 
+const TICKET_CATEGORIES: Record<string, string[]> = {
+  "Vehicle": ["Service / Maintenance", "Accident Reporting", "Replacement Request", "General Query"],
+  "IT Equipment": ["Hardware Issue", "Software Issue", "Replacement Request", "Upgrade Request"]
+};
+
 /* ── simple card shell ────────────────────────────────────────────── */
-function KPICard({ title, icon, children, accent = "blue" }: {
-  title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string;
+function KPICard({ title, icon, children, accent = "blue", actionNode }: {
+  title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string; actionNode?: React.ReactNode;
 }) {
   const ring: Record<string, string> = {
     blue: "border-blue-500/20 shadow-blue-900/10",
@@ -50,13 +64,18 @@ function KPICard({ title, icon, children, accent = "blue" }: {
     red: "bg-red-500", violet: "bg-violet-500", teal: "bg-teal-500", orange: "bg-orange-500",
   };
   return (
-    <div className={`rounded-xl border bg-card p-5 shadow-sm flex flex-col gap-3 ${ring[accent] ?? ""}`}>
+    <div className={`rounded-xl border bg-card p-5 shadow-sm flex flex-col gap-3 relative ${ring[accent] ?? ""}`}>
+      {actionNode && (
+        <div className="absolute top-4 right-4 z-10">
+          {actionNode}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`h-1.5 w-1.5 rounded-full ${dot[accent]}`} />
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</p>
         </div>
-        <span className="text-muted-foreground/60">{icon}</span>
+        {!actionNode && <span className="text-muted-foreground/60">{icon}</span>}
       </div>
       {children}
     </div>
@@ -66,6 +85,20 @@ function KPICard({ title, icon, children, accent = "blue" }: {
 /* ── page ─────────────────────────────────────────────────────────── */
 export default function IndividualDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+
+  const handleTicketSubmit = (e: React.FormEvent | React.MouseEvent) => {
+    e.preventDefault();
+    setTicketModalOpen(false);
+    toast({ title: "Request Submitted", description: "Your service request has been logged and assigned an ID.", variant: "default" });
+  };
+
+  const handlePayNow = () => {
+    setPaymentModalOpen(true);
+  };
 
   const pct = Math.round((d.elapsedMonths / d.tenureMonths) * 100);
   const remaining = d.tenureMonths - d.elapsedMonths;
@@ -79,31 +112,33 @@ export default function IndividualDashboard() {
   return (
     <AppLayout>
       {/* ── page header ── */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="h-9 w-9 rounded-lg bg-teal-500/15 flex items-center justify-center">
-            <Car className="h-5 w-5 text-teal-500" />
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="h-9 w-9 rounded-lg bg-teal-500/15 flex items-center justify-center">
+              <Car className="h-5 w-5 text-teal-500" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground font-heading">
+                My Lease Dashboard
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                Welcome back, {user?.name} · {d.assetDescription} · {d.registrationNo}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground font-heading">
-              My Lease Dashboard
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Welcome back, {user?.name} · {d.assetDescription} · {d.registrationNo}
-            </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            {[
+              { label: "Contract", val: d.contractNo },
+              { label: "Asset Tag", val: d.assetTag },
+              { label: "Lease Start", val: fmtDate(d.leaseStartDate) },
+              { label: "Lease End",   val: fmtDate(d.leaseEndDate)   },
+            ].map(b => (
+              <span key={b.label} className="rounded-md border bg-muted/40 px-2.5 py-1 text-muted-foreground">
+                <span className="font-medium text-foreground mr-1">{b.label}:</span>{b.val}
+              </span>
+            ))}
           </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-          {[
-            { label: "Contract", val: d.contractNo },
-            { label: "Asset Tag", val: d.assetTag },
-            { label: "Lease Start", val: fmtDate(d.leaseStartDate) },
-            { label: "Lease End",   val: fmtDate(d.leaseEndDate)   },
-          ].map(b => (
-            <span key={b.label} className="rounded-md border bg-muted/40 px-2.5 py-1 text-muted-foreground">
-              <span className="font-medium text-foreground mr-1">{b.label}:</span>{b.val}
-            </span>
-          ))}
         </div>
       </div>
 
@@ -132,8 +167,17 @@ export default function IndividualDashboard() {
         </KPICard>
 
         {/* 2 – Upcoming Payment */}
-        <KPICard title="Upcoming Payment" icon={<CreditCard className="h-4 w-4" />} accent="emerald">
-          <div className="flex items-end justify-between">
+        <KPICard 
+          title="Upcoming Payment" 
+          icon={<CreditCard className="h-4 w-4" />} 
+          accent="emerald"
+          actionNode={
+            <Button size="sm" onClick={handlePayNow} className="h-7 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-md px-3 font-semibold shadow-sm">
+               <IndianRupee className="h-3 w-3 mr-1" /> Pay Now
+            </Button>
+          }
+        >
+          <div className="flex items-end justify-between mt-2">
             <div>
               <p className="text-2xl font-bold text-foreground">{fmt(d.nextPaymentAmount)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">Due on {fmtDate(d.nextPaymentDate)}</p>
@@ -191,8 +235,17 @@ export default function IndividualDashboard() {
         </KPICard>
 
         {/* 5 – Open Service Requests */}
-        <KPICard title="Open Service Requests" icon={<Wrench className="h-4 w-4" />} accent="amber">
-          <div>
+        <KPICard 
+          title="Open Service Requests" 
+          icon={<Wrench className="h-4 w-4" />} 
+          accent="amber"
+          actionNode={
+            <Button size="sm" variant="outline" onClick={() => setTicketModalOpen(true)} className="h-7 text-[11px] border-amber-500/30 text-amber-600 hover:bg-amber-100 hover:text-amber-700 bg-amber-500/10 px-2.5 font-semibold">
+              <TicketPlus className="h-3 w-3 mr-1" /> Create Ticket
+            </Button>
+          }
+        >
+          <div className="mt-1">
             <div className="flex items-baseline gap-2 mb-3">
               <span className="text-2xl font-bold text-foreground">{openCount}</span>
               <span className="text-xs text-muted-foreground">active request{openCount !== 1 ? "s" : ""}</span>
@@ -256,9 +309,9 @@ export default function IndividualDashboard() {
             </div>
             <a
               href={`mailto:${d.vehicleManagerEmail}?subject=Escalation - ${d.contractNo}`}
-              className="shrink-0 flex items-center gap-1 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg border border-blue-500/20"
+              className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-blue-500 hover:text-white transition-colors bg-blue-500/10 hover:bg-blue-500 px-3 py-2 rounded-lg border border-blue-500/20"
             >
-              Raise <ChevronRight className="h-3.5 w-3.5" />
+              Contact Vehicle Manager
             </a>
           </div>
 
@@ -279,9 +332,9 @@ export default function IndividualDashboard() {
             </div>
             <a
               href={`mailto:${d.hrManagerEmail}?subject=Escalation - ${d.contractNo}`}
-              className="shrink-0 flex items-center gap-1 text-xs font-medium text-amber-400 hover:text-amber-300 transition-colors bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-amber-500/20"
+              className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-amber-500 hover:text-white transition-colors bg-amber-500/10 hover:bg-amber-500 px-3 py-2 rounded-lg border border-amber-500/20"
             >
-              Raise <ChevronRight className="h-3.5 w-3.5" />
+              Contact HR Manager
             </a>
           </div>
 
@@ -291,6 +344,120 @@ export default function IndividualDashboard() {
           or email <span className="font-medium text-foreground">customerservice@orixindia.com</span>.
         </p>
       </div>
+
+      {/* ── Create Ticket Modal ── */}
+      <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading">New Service Request</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Category</Label>
+                <Select defaultValue="Vehicle">
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="IT">IT</SelectItem>
+                    <SelectItem value="Vehicle">Vehicle</SelectItem>
+                    <SelectItem value="Invoice">Invoice</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="General">General</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Request Type</Label>
+                <Select defaultValue="Service Request">
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Service Request">Service Request</SelectItem>
+                    <SelectItem value="Closure Request">Closure Request</SelectItem>
+                    <SelectItem value="Report Breakdown">Report Breakdown</SelectItem>
+                    <SelectItem value="Report Stolen Item">Report Stolen Item</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Asset ID / Lease ID (Optional)</Label>
+                <Input placeholder="e.g. VH-001" className="h-9" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Priority</Label>
+                <Select defaultValue="Medium">
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="req-subject" className="text-xs">Subject</Label>
+              <Input id="req-subject" placeholder="Brief description of your request" className="h-9" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="req-desc" className="text-xs">Details</Label>
+              <textarea id="req-desc" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring" rows={3} placeholder="Provide additional details..." />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button type="button" onClick={() => setTicketModalOpen(false)} className="flex-1 h-10 rounded-lg border hover:bg-muted text-sm font-medium transition-colors">Cancel</button>
+              <button type="button" onClick={handleTicketSubmit} className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">Submit Request</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* ── Payment Flow Dialog ── */}
+      <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Make Payment</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Select payment method for your upcoming payment.
+              <br /> Amount Due: <span className="font-bold text-foreground">{fmt(d.nextPaymentAmount)}</span>
+            </p>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <button
+              className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
+              onClick={() => {
+                toast({ title: "Redirecting...", description: "Connecting to Credit payment gateway." });
+                setPaymentModalOpen(false);
+              }}
+            >
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <Building2 className="h-6 w-6" />
+              </div>
+              <span className="font-semibold text-sm">Credit Card</span>
+            </button>
+
+            <button
+              className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
+              onClick={() => {
+                toast({ title: "Redirecting...", description: "Opening UPI apps." });
+                setPaymentModalOpen(false);
+              }}
+            >
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <Smartphone className="h-6 w-6" />
+              </div>
+              <span className="font-semibold text-sm">UPI Apps</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-center text-muted-foreground mt-4">
+            Payments are processed securely. Your transaction will be reflected instantly.
+          </p>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
