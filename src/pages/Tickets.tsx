@@ -64,8 +64,15 @@ const Tickets = () => {
   const [, setRefresh] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
+  const isIndividual = !!user?.isIndividual;
 
   const filtered = tickets.filter((t) => {
+    // Individual users only see their own asset's tickets
+    if (isIndividual) {
+      const myAssets = ['VH-001', 'IT-005'];
+      const isMyTicket = myAssets.some(tag => t.subject.includes(tag)) || t.clientId === 'c1';
+      if (!isMyTicket) return false;
+    }
     if (statusFilter.length > 0 && !statusFilter.includes(t.status)) return false;
     if (categoryFilter.length > 0 && !categoryFilter.includes(t.category)) return false;
     if (priorityFilter.length > 0 && !priorityFilter.includes(t.priority)) return false;
@@ -126,13 +133,17 @@ const Tickets = () => {
           <p className="page-description">Create and track service tickets with SLA tracking</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
-            <Save className="h-4 w-4" /> Save Custom Report
-          </Button>
-          <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'service-requests.csv')}>
-            <Download className="h-4 w-4" /> Download CSV
-          </Button>
-          {user?.isPortalUser && (
+          {!isIndividual && (
+            <>
+              <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
+                <Save className="h-4 w-4" /> Save Custom Report
+              </Button>
+              <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'service-requests.csv')}>
+                <Download className="h-4 w-4" /> Download CSV
+              </Button>
+            </>
+          )}
+          {(user?.isPortalUser || isIndividual) && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-1.5"><Plus className="h-4 w-4" /> Create Ticket</Button>
@@ -152,7 +163,7 @@ const Tickets = () => {
                         <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Vehicle">Vehicle</SelectItem>
-                          <SelectItem value="IT Equipment">IT Equipment</SelectItem>
+                          {!isIndividual && <SelectItem value="IT Equipment">IT Equipment</SelectItem>}
                         </SelectContent>
                       </Select>
                     </div>
@@ -174,8 +185,13 @@ const Tickets = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Asset ID / Lease ID (Optional)</Label>
-                      <Input placeholder="e.g. VH-001 or OL-2024-001" />
+                      <Label>Asset ID / Lease ID {isIndividual ? '' : '(Optional)'}</Label>
+                      <Input
+                        placeholder="e.g. VH-001 or OL-2024-001"
+                        defaultValue={isIndividual ? 'VH-001' : ''}
+                        readOnly={isIndividual}
+                        className={isIndividual ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Priority</Label>

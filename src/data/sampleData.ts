@@ -270,3 +270,49 @@ export const dashboardKPIs = {
   assetsByType: { Vehicle: 0, 'IT Equipment': 0 },
   assetsByStatus: { Active: 0, 'Under Maintenance': 0, 'In Transit': 0 },
 };
+
+/* ── Individual User – Qualtech lease snapshot ───────────────────── */
+export const individualLeaseData = {
+  // Lease identity
+  contractNo: 'OL-2024-001',
+  assetTag: 'VH-001',
+  assetDescription: 'Toyota Innova Crysta',
+  registrationNo: 'MH-02-AB-1234',
+  assignedTo: 'Arjun Mehta',
+
+  // Tenure
+  leaseStartDate: '2024-01-15',
+  leaseEndDate: '2027-01-14',
+  tenureMonths: 36,
+  elapsedMonths: 27,    // months elapsed as of demo date
+
+  // Payment
+  nextPaymentDate: '2026-05-01',
+  nextPaymentAmount: 45000,
+  totalLeaseValue: 1620000,
+  amountPaid: 1215000,   // 27 × ₹45,000
+
+  // Insurance
+  insurancePolicyNo: 'INS-VH-2024-001',
+  insuranceProvider: 'ICICI Lombard',
+  insuranceStartDate: '2024-01-15',
+  insuranceExpiryDate: '2025-06-30',   // expired — demo escalation scenario
+  insuranceStatus: 'Expired' as 'Active' | 'Expiring Soon' | 'Expired',
+
+  // Service requests (scoped to this user)
+  openServiceRequests: [
+    { ticketNo: 'SR-2026-001', subject: 'Flat tyre replacement - VH-001', status: 'Open',        priority: 'High'   },
+    { ticketNo: 'SR-2026-010', subject: 'Windshield crack repair',          status: 'In Progress', priority: 'Medium' },
+  ],
+
+  // Residual Value
+  residualValue: 250000,
+  residualValueDueDate: '2027-01-14',
+
+  // Support contacts
+  vehicleManagerName: 'Priya Nair',
+  vehicleManagerEmail: 'priya@orixindia.com',
+  hrManagerName: 'Rajesh Verma',
+  hrManagerEmail: 'rajesh@qualtechedge.com',
+};
+

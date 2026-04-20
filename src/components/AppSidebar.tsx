@@ -32,6 +32,15 @@ const allErpItems = [
 
 const adminItems = [{ title: "User Management", url: "/users", icon: Users }];
 
+/* ── Individual User nav (5 modules only) ────────────────────────── */
+const individualItems = [
+  { title: "Dashboard",        url: "/",              icon: LayoutDashboard },
+  { title: "Service Requests", url: "/tickets",       icon: TicketPlus      },
+  { title: "Notifications",   url: "/notifications", icon: Bell            },
+  { title: "Profile",          url: "/profile",       icon: User            },
+  { title: "FAQ",              url: "/faq",           icon: HelpCircle      },
+];
+
 /* ── Customer Portal nav ─────────────────────────────────────────── */
 const portalItems = [
   { title: "Dashboard", url: "/", icon: Home },
@@ -54,6 +63,7 @@ export function AppSidebar() {
   const { user, logout } = useAuth();
 
   const isPortal = !!user?.isPortalUser;
+  const isIndividual = !!user?.isIndividual;
 
   /* Filter ERP items by role */
   const role: UserRole = user?.role ?? "ORIX User";
@@ -61,7 +71,7 @@ export function AppSidebar() {
     i.roles.includes("all") || i.roles.includes(role) || user?.isAdmin
   );
 
-  const navItems = visibleErpItems;
+  const navItems = isIndividual ? individualItems : visibleErpItems;
 
   const linkClass = (active: boolean) =>
     `flex items-center rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors
@@ -82,7 +92,9 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="font-heading font-bold text-sm text-[#ce1439] leading-tight truncate">ORIX India</p>
-              <p className="text-[10px] text-sidebar-muted truncate">{isPortal ? "Customer Portal" : "Enterprise Portal"}</p>
+              <p className="text-[10px] text-sidebar-muted truncate">
+            {isIndividual ? "Individual Lease Portal" : isPortal ? "Customer Portal" : "Enterprise Portal"}
+          </p>
             </div>
           )}
         </div>
@@ -114,7 +126,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {user?.isAdmin && !isPortal && (
+        {user?.isAdmin && !isPortal && !isIndividual && (
           <SidebarGroup>
             {!collapsed && <SidebarGroupLabel className="text-[10px] uppercase tracking-wider">Admin</SidebarGroupLabel>}
             <SidebarGroupContent>

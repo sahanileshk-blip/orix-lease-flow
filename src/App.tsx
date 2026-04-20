@@ -11,6 +11,7 @@ import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
 
 // ERP pages
 import Dashboard from "./pages/Dashboard";
+import IndividualDashboard from "./pages/IndividualDashboard";
 import VehicleFleet from "./pages/VehicleFleet";
 import ITAssets from "./pages/ITAssets";
 import Contracts from "./pages/Contracts";
@@ -60,6 +61,22 @@ function PortalRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function IndividualRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!user?.isIndividual) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+// Switches the root route between the standard Dashboard and Individual Dashboard
+function DashboardSwitch() {
+  const { user } = useAuth();
+  return user?.isIndividual ? <IndividualDashboard /> : <Dashboard />;
+}
+
+// suppress unused-import warning (IndividualRoute kept for future guarded routes)
+void IndividualRoute;
+
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
@@ -70,8 +87,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to={defaultRedirect} replace /> : <Login />} />
 
-      {/* ERP & Portal Shared Dashboard */}
-      <Route path="/"           element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      {/* Root route — switches between ERP Dashboard and Individual Dashboard */}
+      <Route path="/" element={<ProtectedRoute><DashboardSwitch /></ProtectedRoute>} />
       
       {/* ERP Routes */}
       <Route path="/vehicles"   element={<ProtectedRoute><VehicleFleet /></ProtectedRoute>} />

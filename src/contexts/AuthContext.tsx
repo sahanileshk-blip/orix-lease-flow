@@ -18,6 +18,7 @@ export interface AppUser {
   clientName?: string;
   isAdmin: boolean;
   isPortalUser?: boolean; // true for customer-facing portal accounts
+  isIndividual?: boolean; // true for individual end-user (restricted access)
   accessLevel?: "all" | "multiple" | "single";
   allowedClients?: string[];
   lastLogin?: string; // ISO string
@@ -121,6 +122,21 @@ export const relianceUser: AppUser = {
   lastActivity: "Raised Service Request SR-4521",
 };
 
+export const individualUser: AppUser = {
+  id: "u9",
+  name: "Arjun Mehta",
+  email: "arjun.mehta@qualtechedge.com",
+  role: "Viewer",
+  clientId: "c1",
+  clientName: "Qualtech Edge Ltd",
+  isAdmin: false,
+  isPortalUser: false,
+  isIndividual: true,
+  accessLevel: "single",
+  lastLogin: new Date(Date.now() - 3600000 * 1).toISOString(),
+  lastActivity: "Viewed Lease Dashboard",
+};
+
 export type LoginType =
   | "superadmin"
   | "admin"
@@ -129,7 +145,8 @@ export type LoginType =
   | "lease-manager"
   | "finance-manager"
   | "client"
-  | "reliance";
+  | "reliance"
+  | "individual";
 
 interface AuthContextType {
   user: AppUser | null;
@@ -162,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "finance-manager": { ...financeManagerUser, lastLogin: now },
       client: { ...clientUser, lastLogin: now },
       reliance: { ...relianceUser, lastLogin: now },
+      individual: { ...individualUser, lastLogin: now },
     };
     setUser(userMap[type]);
   };

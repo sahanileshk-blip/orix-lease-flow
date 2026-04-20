@@ -36,6 +36,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const { trackModule } = usePersonalization();
+  const isIndividual = !!user?.isIndividual;
 
   // Track route visits for "Recently Accessed"
   useEffect(() => {
@@ -59,10 +60,10 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Link>
 
               {/* Quick Actions Bar */}
-              <QuickActionsBar />
+              {!isIndividual && <QuickActionsBar />}
 
               {/* Admin global filters */}
-              {user?.isAdmin && (
+              {user?.isAdmin && !isIndividual && (
                 <div className="hidden sm:flex items-center gap-2 ml-2">
                   <span className="text-xs text-muted-foreground">Client:</span>
                   <MultiSelect
@@ -80,9 +81,10 @@ export function AppLayout({ children }: AppLayoutProps) {
                   />
                 </div>
               )}
-              {user && !user.isAdmin && (
+              {user && !user.isAdmin && !isIndividual && (
                 <span className="text-xs text-muted-foreground hidden sm:block truncate">{user.clientName}</span>
               )}
+              {!isIndividual && (
               <div className="hidden lg:flex items-center gap-2">
                 <MultiSelect placeholder="Cost Centers" className="w-[150px]" selected={costCenterFilter} onChange={setCostCenterFilter} options={costCenters.map(cc => ({ label: cc, value: cc }))} />
                 <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
@@ -98,6 +100,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   ]}
                 />
               </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">

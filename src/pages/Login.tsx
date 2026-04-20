@@ -13,10 +13,11 @@ import { useToast } from "@/hooks/use-toast";
 
 /* ── Demo login role config ─────────────────────────────────────────── */
 const demoRoles: { label: string; type: LoginType; icon: React.ElementType; color: string }[] = [
-  { label: "Superadmin", type: "superadmin", icon: Shield, color: "bg-[#ce1439] hover:bg-[#b0102e] text-white" },
-  { label: "ORIX Admin", type: "admin", icon: Shield, color: "bg-slate-800 hover:bg-slate-700 text-white" },
-  { label: "Qualtech (Client)", type: "client", icon: Users, color: "bg-amber-600 hover:bg-amber-700 text-white" },
-  { label: "Reliance (Client)", type: "reliance", icon: Users, color: "bg-orange-700 hover:bg-orange-800 text-white" },
+  { label: "IT Admin (ORIX)", type: "superadmin", icon: Shield, color: "bg-[#ce1439] hover:bg-[#b0102e] text-white" },
+  { label: "RM - Orix", type: "admin", icon: Shield, color: "bg-indigo-600 hover:bg-indigo-700 text-white" },
+  { label: "HR Manager – Qualtech", type: "client", icon: Users, color: "bg-amber-600 hover:bg-amber-700 text-white" },
+  { label: "HR Manager – Reliance", type: "reliance", icon: Users, color: "bg-orange-700 hover:bg-orange-800 text-white" },
+  { label: "Individual User – Qualtech", type: "individual", icon: Users, color: "bg-teal-600 hover:bg-teal-700 text-white" },
 ];
 
 const loginFeatures = [
@@ -69,7 +70,7 @@ const Login = () => {
   const [showOtp, setShowOtp] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Captcha State
   const [captcha, setCaptcha] = useState({ q: "", a: 0 });
   const [userCap, setUserCap] = useState("");
