@@ -148,7 +148,7 @@ const VehicleFleet = () => {
                 <td className="text-muted-foreground">{a.clientName}</td>
                 <td>{a.driver || a.assignedTo || '—'}</td>
                 <td>
-                  <span className={`status-badge ${a.leaseStatus === 'Disbursed' ? 'status-active' : a.leaseStatus === 'Partially Disbursed' ? 'status-pending' : 'status-overdue'}`}>
+                  <span className={`status-badge ${a.leaseStatus === 'Disbursed' ? 'status-active' : 'status-overdue'}`}>
                     {a.leaseStatus}
                   </span>
                 </td>

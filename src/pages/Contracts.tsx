@@ -119,10 +119,7 @@ const Contracts = () => {
           <p className="text-xs text-muted-foreground">Disbursed</p>
           <p className="text-2xl font-bold font-heading text-[hsl(var(--success))]">{filtered.filter(c => c.status === 'Disbursed').length}</p>
         </div>
-        <div className="kpi-card">
-          <p className="text-xs text-muted-foreground">Partially Disbursed</p>
-          <p className="text-2xl font-bold font-heading text-[hsl(var(--warning))]">{filtered.filter(c => c.status === 'Partially Disbursed').length}</p>
-        </div>
+
         <div className="kpi-card">
           <p className="text-xs text-muted-foreground">Foreclosed</p>
           <p className="text-2xl font-bold font-heading text-muted-foreground">{filtered.filter(c => c.status === 'Foreclosed').length}</p>
@@ -190,14 +187,14 @@ const Contracts = () => {
                 <td>{c.assetType}</td>
                 <td>{c.tenure}</td>
                 <td>{formatCurrency(c.monthlyRental)}</td>
-                <td>{formatCurrency(c.monthlyRental * (c.status === "Partially Disbursed" ? 2 : 0))}</td>
+                <td>{formatCurrency(0)}</td>
                 <td>{formatCurrency(c.totalValue)}</td>
-                <td className="text-center">{c.status === "Partially Disbursed" ? `${c.assetsCount}/${c.assetsCount + 2}` : c.assetsCount}</td>
-                <td className="text-center">{c.status === "Partially Disbursed" ? 2 : 0}</td>
+                <td className="text-center">{c.assetsCount}</td>
+                <td className="text-center">{0}</td>
                 <td className="text-muted-foreground">{c.startDate}</td>
                 <td className="text-muted-foreground">{c.endDate}</td>
                 <td>
-                  <span className={`status-badge ${c.status === 'Disbursed' ? 'status-active' : c.status === 'Partially Disbursed' ? 'status-pending' : 'status-closed'}`}>
+                  <span className={`status-badge ${c.status === 'Disbursed' ? 'status-active' : 'status-closed'}`}>
                     {c.status}
                   </span>
                 </td>
@@ -232,7 +229,7 @@ const Contracts = () => {
             <tr className="bg-muted/50 font-bold border-t-2">
               <td colSpan={user?.isAdmin ? 5 : 4} className="text-right py-4">Total:</td>
               <td className="py-4 text-primary">{formatCurrency(filtered.reduce((sum, c) => sum + c.monthlyRental, 0))}</td>
-              <td className="py-4 text-primary">{formatCurrency(filtered.reduce((sum, c) => sum + (c.monthlyRental * (c.status === "Partially Disbursed" ? 2 : 0)), 0))}</td>
+              <td className="py-4 text-primary">{formatCurrency(0)}</td>
               <td className="py-4 text-primary">{formatCurrency(filtered.reduce((sum, c) => sum + c.totalValue, 0))}</td>
               <td className="text-center py-4 text-primary"></td>
               <td className="text-center py-4 text-primary"></td>

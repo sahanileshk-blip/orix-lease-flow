@@ -30,7 +30,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { clientFilter, setClientFilter, costCenterFilter, setCostCenterFilter, locationFilter, setLocationFilter, leaseStatusFilter, setLeaseStatusFilter } = useFilter();
+  const { clientFilter, setClientFilter, locationFilter, setLocationFilter, leaseStatusFilter, setLeaseStatusFilter } = useFilter();
   const unreadCount = notifications.filter(n => !n.read).length;
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -83,7 +83,6 @@ export function AppLayout({ children }: AppLayoutProps) {
               )}
               {!isIndividual && (
               <div className="hidden lg:flex items-center gap-2">
-                <MultiSelect placeholder="Cost Centers" className="w-[150px]" selected={costCenterFilter} onChange={setCostCenterFilter} options={costCenters.map(cc => ({ label: cc, value: cc }))} />
                 <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
                 <MultiSelect
                   placeholder="Lease Status"
@@ -91,7 +90,6 @@ export function AppLayout({ children }: AppLayoutProps) {
                   selected={leaseStatusFilter}
                   onChange={setLeaseStatusFilter}
                   options={[
-                    { label: "Partially Disbursed", value: "Partially Disbursed" },
                     { label: "Disbursed",           value: "Disbursed"           },
                     { label: "Foreclosed",          value: "Foreclosed"          },
                   ]}

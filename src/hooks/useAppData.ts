@@ -61,10 +61,10 @@ export function useAppData() {
   const dynamicKPIs = {
     ...dashboardKPIs,
     totalLeases: fContracts.length,
-    activeLeases: fContracts.filter(c => c.status === 'Disbursed' || c.status === 'Partially Disbursed').length,
+    activeLeases: fContracts.filter(c => c.status === 'Disbursed').length,
     totalAssets: fAssets.length,
     totalLeaseValue: fContracts.reduce((sum, c) => sum + c.totalValue, 0),
-    activeLeaseValue: fContracts.filter(c => c.status === 'Disbursed' || c.status === 'Partially Disbursed').reduce((sum, c) => sum + c.totalValue, 0),
+    activeLeaseValue: fContracts.filter(c => c.status === 'Disbursed').reduce((sum, c) => sum + c.totalValue, 0),
     assetsByType: {
       Vehicle: fAssets.filter(a => a.type === 'Vehicle').length,
       'IT Equipment': fAssets.filter(a => a.type === 'IT Equipment').length,

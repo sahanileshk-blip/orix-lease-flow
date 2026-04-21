@@ -6,15 +6,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Car, CalendarClock, CreditCard, ShieldAlert, Wrench,
   TrendingDown, PhoneCall, Mail, AlertTriangle, CheckCircle2,
-  Clock, ChevronRight, BadgeCheck, Flame, TicketPlus, DollarSign,
+  Clock, BadgeCheck, Flame, TicketPlus,
   IndianRupee, Building2, Smartphone
 } from "lucide-react";
+import { DraggableDashboard, CustomizeLayoutButton, type DashboardCardDef } from "@/components/dashboard/DraggableDashboard";
 
 /* ── helpers ──────────────────────────────────────────────────────── */
 const fmt = (n: number) =>
@@ -41,35 +41,21 @@ const priorityBadge = (p: string) => {
 const statusIcon = (s: string) =>
   s === "Open" ? <Clock className="h-3.5 w-3.5 text-amber-400" /> : <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" />;
 
-const TICKET_CATEGORIES: Record<string, string[]> = {
-  "Vehicle": ["Service / Maintenance", "Accident Reporting", "Replacement Request", "General Query"],
-  "IT Equipment": ["Hardware Issue", "Software Issue", "Replacement Request", "Upgrade Request"]
-};
-
 /* ── simple card shell ────────────────────────────────────────────── */
 function KPICard({ title, icon, children, accent = "blue", actionNode }: {
   title: string; icon: React.ReactNode; children: React.ReactNode; accent?: string; actionNode?: React.ReactNode;
 }) {
   const ring: Record<string, string> = {
-    blue: "border-blue-500/20 shadow-blue-900/10",
-    emerald: "border-emerald-500/20 shadow-emerald-900/10",
-    amber: "border-amber-500/20 shadow-amber-900/10",
-    red: "border-red-500/20 shadow-red-900/10",
-    violet: "border-violet-500/20 shadow-violet-900/10",
-    teal: "border-teal-500/20 shadow-teal-900/10",
-    orange: "border-orange-500/20 shadow-orange-900/10",
+    blue: "border-blue-500/20", emerald: "border-emerald-500/20", amber: "border-amber-500/20",
+    red: "border-red-500/20", violet: "border-violet-500/20", teal: "border-teal-500/20", orange: "border-orange-500/20",
   };
   const dot: Record<string, string> = {
     blue: "bg-blue-500", emerald: "bg-emerald-500", amber: "bg-amber-500",
     red: "bg-red-500", violet: "bg-violet-500", teal: "bg-teal-500", orange: "bg-orange-500",
   };
   return (
-    <div className={`rounded-xl border bg-card p-5 shadow-sm flex flex-col gap-3 relative ${ring[accent] ?? ""}`}>
-      {actionNode && (
-        <div className="absolute top-4 right-4 z-10">
-          {actionNode}
-        </div>
-      )}
+    <div className={`rounded-xl border bg-card p-5 shadow-sm flex flex-col gap-3 relative h-full ${ring[accent] ?? ""}`}>
+      {actionNode && <div className="absolute top-4 right-4 z-10">{actionNode}</div>}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`h-1.5 w-1.5 rounded-full ${dot[accent]}`} />
@@ -87,17 +73,14 @@ export default function IndividualDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const [editMode, setEditMode] = useState(false);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const handleTicketSubmit = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     setTicketModalOpen(false);
-    toast({ title: "Request Submitted", description: "Your service request has been logged and assigned an ID.", variant: "default" });
-  };
-
-  const handlePayNow = () => {
-    setPaymentModalOpen(true);
+    toast({ title: "Request Submitted", description: "Your service request has been logged and assigned an ID." });
   };
 
   const pct = Math.round((d.elapsedMonths / d.tenureMonths) * 100);
@@ -109,43 +92,12 @@ export default function IndividualDashboard() {
   const openCount = d.openServiceRequests.filter(r => r.status !== "Closed").length;
   const daysToRV = daysUntil(d.residualValueDueDate);
 
-  return (
-    <AppLayout>
-      {/* ── page header ── */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-9 w-9 rounded-lg bg-teal-500/15 flex items-center justify-center">
-              <Car className="h-5 w-5 text-teal-500" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground font-heading">
-                My Lease Dashboard
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Welcome back, {user?.name} · {d.assetDescription} · {d.registrationNo}
-              </p>
-            </div>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-            {[
-              { label: "Contract", val: d.contractNo },
-              { label: "Asset Tag", val: d.assetTag },
-              { label: "Lease Start", val: fmtDate(d.leaseStartDate) },
-              { label: "Lease End",   val: fmtDate(d.leaseEndDate)   },
-            ].map(b => (
-              <span key={b.label} className="rounded-md border bg-muted/40 px-2.5 py-1 text-muted-foreground">
-                <span className="font-medium text-foreground mr-1">{b.label}:</span>{b.val}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── KPI grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-
-        {/* 1 – Lease Tenure Progress */}
+  /* ── card definitions ──────────────────────────────────────────── */
+  const cards: DashboardCardDef[] = [
+    {
+      id: "ind-tenure",
+      defaultLayout: { x: 0, y: 0, w: 4, h: 2, minW: 3, minH: 1 },
+      content: (
         <KPICard title="Lease Tenure Progress" icon={<CalendarClock className="h-4 w-4" />} accent="blue">
           <div>
             <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
@@ -153,10 +105,7 @@ export default function IndividualDashboard() {
               <span>{remaining} months remaining</span>
             </div>
             <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all" style={{ width: `${pct}%` }} />
             </div>
             <div className="flex justify-between mt-1.5">
               <span className="text-[11px] text-muted-foreground">{fmtDate(d.leaseStartDate)}</span>
@@ -165,15 +114,19 @@ export default function IndividualDashboard() {
             </div>
           </div>
         </KPICard>
-
-        {/* 2 – Upcoming Payment */}
-        <KPICard 
-          title="Upcoming Payment" 
-          icon={<CreditCard className="h-4 w-4" />} 
+      ),
+    },
+    {
+      id: "ind-payment",
+      defaultLayout: { x: 4, y: 0, w: 4, h: 2, minW: 3, minH: 1 },
+      content: (
+        <KPICard
+          title="Upcoming Payment"
+          icon={<CreditCard className="h-4 w-4" />}
           accent="emerald"
           actionNode={
-            <Button size="sm" onClick={handlePayNow} className="h-7 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-md px-3 font-semibold shadow-sm">
-               <IndianRupee className="h-3 w-3 mr-1" /> Pay Now
+            <Button size="sm" onClick={() => setPaymentModalOpen(true)} className="h-7 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-md px-3 font-semibold shadow-sm">
+              <IndianRupee className="h-3 w-3 mr-1" /> Pay Now
             </Button>
           }
         >
@@ -183,18 +136,20 @@ export default function IndividualDashboard() {
               <p className="text-xs text-muted-foreground mt-0.5">Due on {fmtDate(d.nextPaymentDate)}</p>
             </div>
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-              daysToPayment <= 5
-                ? "bg-red-500/15 text-red-500 border border-red-500/30"
-                : daysToPayment <= 15
-                ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
-                : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+              daysToPayment <= 5 ? "bg-red-500/15 text-red-500 border border-red-500/30"
+              : daysToPayment <= 15 ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+              : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
             }`}>
               {daysToPayment > 0 ? `${daysToPayment}d left` : "Due today"}
             </span>
           </div>
         </KPICard>
-
-        {/* 3 – Outstanding Lease Balance */}
+      ),
+    },
+    {
+      id: "ind-balance",
+      defaultLayout: { x: 8, y: 0, w: 4, h: 2, minW: 3, minH: 1 },
+      content: (
         <KPICard title="Outstanding Lease Balance" icon={<TrendingDown className="h-4 w-4" />} accent="violet">
           <div>
             <p className="text-2xl font-bold text-foreground">{fmt(balance)}</p>
@@ -204,17 +159,18 @@ export default function IndividualDashboard() {
                 <span>{paidPct}%</span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400"
-                  style={{ width: `${paidPct}%` }}
-                />
+                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400" style={{ width: `${paidPct}%` }} />
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">Total lease value: {fmt(d.totalLeaseValue)}</p>
             </div>
           </div>
         </KPICard>
-
-        {/* 4 – Insurance Policy Status */}
+      ),
+    },
+    {
+      id: "ind-insurance",
+      defaultLayout: { x: 0, y: 2, w: 4, h: 2, minW: 3, minH: 1 },
+      content: (
         <KPICard title="Insurance Policy Status" icon={<ShieldAlert className="h-4 w-4" />} accent={d.insuranceStatus === "Active" ? "emerald" : "red"}>
           <div className="flex items-center justify-between">
             <div>
@@ -233,11 +189,15 @@ export default function IndividualDashboard() {
             )}
           </div>
         </KPICard>
-
-        {/* 5 – Open Service Requests */}
-        <KPICard 
-          title="Open Service Requests" 
-          icon={<Wrench className="h-4 w-4" />} 
+      ),
+    },
+    {
+      id: "ind-tickets",
+      defaultLayout: { x: 4, y: 2, w: 4, h: 2, minW: 3, minH: 1 },
+      content: (
+        <KPICard
+          title="Open Service Requests"
+          icon={<Wrench className="h-4 w-4" />}
           accent="amber"
           actionNode={
             <Button size="sm" variant="outline" onClick={() => setTicketModalOpen(true)} className="h-7 text-[11px] border-amber-500/30 text-amber-600 hover:bg-amber-100 hover:text-amber-700 bg-amber-500/10 px-2.5 font-semibold">
@@ -266,8 +226,12 @@ export default function IndividualDashboard() {
             </ul>
           </div>
         </KPICard>
-
-        {/* 6 – Residual Value */}
+      ),
+    },
+    {
+      id: "ind-residual",
+      defaultLayout: { x: 8, y: 2, w: 4, h: 2, minW: 3, minH: 1 },
+      content: (
         <KPICard title="Residual Value (RV)" icon={<TrendingDown className="h-4 w-4" />} accent="teal">
           <div className="flex items-end justify-between">
             <div>
@@ -280,8 +244,50 @@ export default function IndividualDashboard() {
             </span>
           </div>
         </KPICard>
+      ),
+    },
+  ];
 
+  return (
+    <AppLayout>
+      {/* ── page header ── */}
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="h-9 w-9 rounded-lg bg-teal-500/15 flex items-center justify-center">
+              <Car className="h-5 w-5 text-teal-500" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground font-heading">My Lease Dashboard</h1>
+              <p className="text-xs text-muted-foreground">
+                Welcome back, {user?.name} · {d.assetDescription} · {d.registrationNo}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            {[
+              { label: "Contract", val: d.contractNo },
+              { label: "Asset Tag", val: d.assetTag },
+              { label: "Lease Start", val: fmtDate(d.leaseStartDate) },
+              { label: "Lease End",   val: fmtDate(d.leaseEndDate)   },
+            ].map(b => (
+              <span key={b.label} className="rounded-md border bg-muted/40 px-2.5 py-1 text-muted-foreground">
+                <span className="font-medium text-foreground mr-1">{b.label}:</span>{b.val}
+              </span>
+            ))}
+          </div>
+        </div>
+        {/* ── Customize Layout button ── */}
+        <CustomizeLayoutButton editMode={editMode} onToggle={() => setEditMode(v => !v)} />
       </div>
+
+      {/* ── Draggable KPI grid ── */}
+      <DraggableDashboard
+        key="individual"
+        cards={cards}
+        editMode={editMode}
+        onEditModeChange={setEditMode}
+      />
 
       {/* ── Escalation Support ── */}
       <div className="mt-4 rounded-xl border border-orange-500/20 bg-orange-500/5 p-5">
@@ -291,8 +297,6 @@ export default function IndividualDashboard() {
           <span className="ml-auto text-[11px] text-muted-foreground">Need help? Reach out directly</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-          {/* Vehicle Manager */}
           <div className="rounded-lg border bg-card p-4 flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-blue-500/15 flex items-center justify-center text-blue-500 font-bold text-sm shrink-0">
               {d.vehicleManagerName.split(" ").map(n => n[0]).join("")}
@@ -300,22 +304,14 @@ export default function IndividualDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">{d.vehicleManagerName}</p>
               <p className="text-[11px] text-muted-foreground">Vehicle Manager</p>
-              <a
-                href={`mailto:${d.vehicleManagerEmail}`}
-                className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 mt-0.5"
-              >
+              <a href={`mailto:${d.vehicleManagerEmail}`} className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 mt-0.5">
                 <Mail className="h-3 w-3" />{d.vehicleManagerEmail}
               </a>
             </div>
-            <a
-              href={`mailto:${d.vehicleManagerEmail}?subject=Escalation - ${d.contractNo}`}
-              className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-blue-500 hover:text-white transition-colors bg-blue-500/10 hover:bg-blue-500 px-3 py-2 rounded-lg border border-blue-500/20"
-            >
+            <a href={`mailto:${d.vehicleManagerEmail}?subject=Escalation - ${d.contractNo}`} className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-blue-500 hover:text-white transition-colors bg-blue-500/10 hover:bg-blue-500 px-3 py-2 rounded-lg border border-blue-500/20">
               Contact Vehicle Manager
             </a>
           </div>
-
-          {/* HR Manager */}
           <div className="rounded-lg border bg-card p-4 flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-500 font-bold text-sm shrink-0">
               {d.hrManagerName.split(" ").map(n => n[0]).join("")}
@@ -323,21 +319,14 @@ export default function IndividualDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">{d.hrManagerName}</p>
               <p className="text-[11px] text-muted-foreground">HR Manager</p>
-              <a
-                href={`mailto:${d.hrManagerEmail}`}
-                className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 mt-0.5"
-              >
+              <a href={`mailto:${d.hrManagerEmail}`} className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 mt-0.5">
                 <Mail className="h-3 w-3" />{d.hrManagerEmail}
               </a>
             </div>
-            <a
-              href={`mailto:${d.hrManagerEmail}?subject=Escalation - ${d.contractNo}`}
-              className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-amber-500 hover:text-white transition-colors bg-amber-500/10 hover:bg-amber-500 px-3 py-2 rounded-lg border border-amber-500/20"
-            >
+            <a href={`mailto:${d.hrManagerEmail}?subject=Escalation - ${d.contractNo}`} className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-amber-500 hover:text-white transition-colors bg-amber-500/10 hover:bg-amber-500 px-3 py-2 rounded-lg border border-amber-500/20">
               Contact HR Manager
             </a>
           </div>
-
         </div>
         <p className="text-[11px] text-muted-foreground mt-3">
           You can also call the ORIX Help Desk toll-free at <span className="font-medium text-foreground">1800-419-7878</span> (24/7)
@@ -380,7 +369,6 @@ export default function IndividualDashboard() {
                 </Select>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Asset ID / Lease ID (Optional)</Label>
@@ -399,7 +387,6 @@ export default function IndividualDashboard() {
                 </Select>
               </div>
             </div>
-
             <div className="space-y-1.5">
               <Label htmlFor="req-subject" className="text-xs">Subject</Label>
               <Input id="req-subject" placeholder="Brief description of your request" className="h-9" />
@@ -415,7 +402,7 @@ export default function IndividualDashboard() {
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* ── Payment Flow Dialog ── */}
       <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
         <DialogContent className="sm:max-w-md">
@@ -427,29 +414,14 @@ export default function IndividualDashboard() {
             </p>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 mt-6">
-            <button
-              className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
-              onClick={() => {
-                toast({ title: "Redirecting...", description: "Connecting to Credit payment gateway." });
-                setPaymentModalOpen(false);
-              }}
-            >
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <Building2 className="h-6 w-6" />
-              </div>
+            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
+              onClick={() => { toast({ title: "Redirecting...", description: "Connecting to Credit payment gateway." }); setPaymentModalOpen(false); }}>
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Building2 className="h-6 w-6" /></div>
               <span className="font-semibold text-sm">Credit Card</span>
             </button>
-
-            <button
-              className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
-              onClick={() => {
-                toast({ title: "Redirecting...", description: "Opening UPI apps." });
-                setPaymentModalOpen(false);
-              }}
-            >
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <Smartphone className="h-6 w-6" />
-              </div>
+            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
+              onClick={() => { toast({ title: "Redirecting...", description: "Opening UPI apps." }); setPaymentModalOpen(false); }}>
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Smartphone className="h-6 w-6" /></div>
               <span className="font-semibold text-sm">UPI Apps</span>
             </button>
           </div>

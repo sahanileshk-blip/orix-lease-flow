@@ -289,3 +289,81 @@
     @apply text-muted-foreground mt-1;
   }
 }
+
+/* ── React Grid Layout ──────────────────────────────────────────────── */
+.react-grid-layout {
+  position: relative;
+}
+
+.react-grid-item {
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease;
+}
+
+.react-grid-item > .card-wrapper {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Drop placeholder */
+.react-grid-placeholder {
+  background: hsl(210 89% 70% / 0.15) !important;
+  border: 2px dashed hsl(210 89% 55%) !important;
+  border-radius: 12px !important;
+  transition: all 0.15s ease;
+}
+
+/* Dragging state */
+.react-grid-item.react-draggable-dragging {
+  z-index: 100 !important;
+  opacity: 0.88;
+  box-shadow: 0 20px 60px -10px hsl(210 52% 24% / 0.25) !important;
+  cursor: grabbing !important;
+}
+
+
+.edit-mode .react-grid-item {
+  border-radius: 12px;
+  outline: 2px dashed hsl(210 89% 55% / 0.4);
+  outline-offset: 2px;
+}
+
+/* Drag handle */
+.drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: hsl(var(--muted));
+  cursor: grab;
+  color: hsl(var(--muted-foreground));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.edit-mode .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Edit mode grid overlay */
+.edit-mode-bg {
+  background-image: radial-gradient(
+    circle,
+    hsl(var(--border)) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+}
+

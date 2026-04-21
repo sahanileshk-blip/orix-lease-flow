@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { individualLeaseData } from "@/data/sampleData";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Car, FileText, AlertTriangle, TicketPlus, TrendingUp, IndianRupee,
@@ -28,6 +29,7 @@ import { SkeletonDashboard } from "@/components/dashboard/SkeletonDashboard";
 import { LeaseForecastChart } from "@/components/dashboard/LeaseForecastChart";
 import { DrillDownModal, DrillColumn } from "@/components/dashboard/DrillDownModal";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { DraggableDashboard, CustomizeLayoutButton, type DashboardCardDef } from "@/components/dashboard/DraggableDashboard";
 
 /* ─── Helpers ────────────────────────────────────────────────────────── */
 function formatCurrency(n: number) {
@@ -45,7 +47,7 @@ function getExpiringLeases(contracts: any[], minDays: number, maxDays: number) {
   const maxDate = new Date(); maxDate.setDate(now.getDate() + maxDays);
   return contracts.filter(c => {
     const e = new Date(c.endDate);
-    return e >= minDate && e <= maxDate && (c.status === "Disbursed" || c.status === "Partially Disbursed");
+    return e >= minDate && e <= maxDate && c.status === "Disbursed";
   });
 }
 
@@ -80,6 +82,7 @@ export default function Dashboard() {
   const [expiryWindow, setExpiryWindow] = useState("30");
   const [drillModal, setDrillModal] = useState<{ title: string; rows: any[]; summary?: any[]; columns?: DrillColumn[] } | null>(null);
   const [loginRange, setLoginRange] = useState("Daily");
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 800);
@@ -189,104 +192,133 @@ export default function Dashboard() {
       });
     };
 
-    return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard label="Total Active Users" value={totalUsers} icon={<Users className="h-5 w-5 text-indigo-500" />} iconBg="bg-indigo-50 dark:bg-indigo-900/20" trend={{ direction: "up", percent: 8 }} insight="45 Admins · 80 Clients · 27 Mngrs" onClick={() => openModuleDrill("System User", totalUsers)} />
-          <KPICard label="System Login Activity" value="590" icon={<Activity className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20" insight="Peak activity today at 10:00 AM" onClick={() => openModuleDrill("Authentication", 590)} />
-          <KPICard label="New User IDs (MTD)" value={newUsersCount} icon={<User2 className="h-5 w-5 text-sky-500" />} iconBg="bg-sky-50 dark:bg-sky-900/20" trend={{ direction: "up", percent: 12 }} insight="Mostly Client-side onboarding" onClick={() => openModuleDrill("Onboarding", newUsersCount)} />
-          <KPICard label="Audit Log Anomalies" value={failedLogins} icon={<AlertTriangle className="h-5 w-5 text-rose-500" />} iconBg="bg-rose-50 dark:bg-rose-900/20" valueColor="text-rose-600" insight="Failed login attempts flagged" onClick={() => openModuleDrill("Security", failedLogins)} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 bg-card rounded-lg border p-5 shadow-sm">
-             <div className="flex justify-between items-center mb-4">
-               <h3 className="font-heading font-semibold text-sm">System Login Activity</h3>
-               <Select value={loginRange} onValueChange={setLoginRange}>
-                 <SelectTrigger className="w-[100px] h-7 text-xs bg-muted/50 border-0">
-                   <SelectValue />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="Daily">Daily</SelectItem>
-                   <SelectItem value="Weekly">Weekly</SelectItem>
-                 </SelectContent>
-               </Select>
-             </div>
-             <ResponsiveContainer width="100%" height={260}>
+    const itAdminCards: DashboardCardDef[] = [
+      {
+        id: 'it-kpi-users',
+        defaultLayout: { x: 0, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Total Active Users" value={totalUsers} icon={<Users className="h-5 w-5 text-indigo-500" />} iconBg="bg-indigo-50 dark:bg-indigo-900/20" trend={{ direction: "up", percent: 8 }} insight="45 Admins · 80 Clients · 27 Mngrs" onClick={() => openModuleDrill("System User", totalUsers)} />,
+      },
+      {
+        id: 'it-kpi-logins',
+        defaultLayout: { x: 3, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="System Login Activity" value="590" icon={<Activity className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20" insight="Peak activity today at 10:00 AM" onClick={() => openModuleDrill("Authentication", 590)} />,
+      },
+      {
+        id: 'it-kpi-new-users',
+        defaultLayout: { x: 6, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="New User IDs (MTD)" value={newUsersCount} icon={<User2 className="h-5 w-5 text-sky-500" />} iconBg="bg-sky-50 dark:bg-sky-900/20" trend={{ direction: "up", percent: 12 }} insight="Mostly Client-side onboarding" onClick={() => openModuleDrill("Onboarding", newUsersCount)} />,
+      },
+      {
+        id: 'it-kpi-anomalies',
+        defaultLayout: { x: 9, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Audit Log Anomalies" value={failedLogins} icon={<AlertTriangle className="h-5 w-5 text-rose-500" />} iconBg="bg-rose-50 dark:bg-rose-900/20" valueColor="text-rose-600" insight="Failed login attempts flagged" onClick={() => openModuleDrill("Security", failedLogins)} />,
+      },
+      {
+        id: 'it-login-chart',
+        defaultLayout: { x: 0, y: 1, w: 8, h: 2, minW: 4, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 shadow-sm h-full flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-heading font-semibold text-sm">System Login Activity</h3>
+              <Select value={loginRange} onValueChange={setLoginRange}>
+                <SelectTrigger className="w-[100px] h-7 text-xs bg-muted/50 border-0"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Daily">Daily</SelectItem>
+                  <SelectItem value="Weekly">Weekly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={loginTrends}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                   <XAxis dataKey="day" tick={{ fontSize: 11 }} tickLine={false} />
                   <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                   <RechartsTooltip cursor={{ stroke: 'var(--border)' }} />
-                  <Line type="monotone" dataKey="count" stroke="hsl(210,52%,40%)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ onClick: (_, payload) => openLoginDrill(payload.payload.day, payload.payload.count), cursor: 'pointer', r: 6 }} />
+                  <Line type="monotone" dataKey="count" stroke="hsl(210,52%,40%)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ onClick: (_: any, payload: any) => openLoginDrill(payload.payload.day, payload.payload.count), cursor: 'pointer', r: 6 }} />
                 </LineChart>
-             </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="bg-card rounded-lg border p-5 shadow-sm flex flex-col">
-             <h3 className="font-heading font-semibold text-sm mb-4">Document Activity</h3>
-             <div className="flex-1 space-y-6 flex flex-col justify-center">
-                <div className="space-y-2 cursor-pointer group" onClick={() => openDocDrill("Uploads", 142)}>
-                   <div className="flex justify-between text-xs text-muted-foreground group-hover:text-primary transition-colors"><span>Uploads (Today)</span> <span className="font-bold text-foreground">142 docs</span></div>
-                   <div className="h-2 w-full rounded-full bg-muted overflow-hidden"><div className="h-full bg-emerald-500 rounded-full group-hover:brightness-110 transition-all" style={{ width: '65%' }}></div></div>
-                </div>
-                <div className="space-y-2 cursor-pointer group" onClick={() => openDocDrill("Downloads", 890)}>
-                   <div className="flex justify-between text-xs text-muted-foreground group-hover:text-primary transition-colors"><span>Downloads (Today)</span> <span className="font-bold text-foreground">890 docs</span></div>
-                   <div className="h-2 w-full rounded-full bg-muted overflow-hidden"><div className="h-full bg-amber-500 rounded-full group-hover:brightness-110 transition-all" style={{ width: '85%' }}></div></div>
-                </div>
-                <div className="pt-4 border-t border-border/50 text-xs">
-                  <TooltipProvider delayDuration={200}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="flex items-center gap-1.5 text-muted-foreground w-max cursor-help">
-                          <Settings className="h-4 w-4 text-sky-500" /> {loginConfigChanges} Config Changes this week <Info className="h-3 w-3 opacity-50" />
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent className="text-xs">
-                        Counts updates to login page text and branding elements.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-             </div>
+        ),
+      },
+      {
+        id: 'it-doc-activity',
+        defaultLayout: { x: 8, y: 1, w: 4, h: 2, minW: 3, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 shadow-sm h-full flex flex-col">
+            <h3 className="font-heading font-semibold text-sm mb-4">Document Activity</h3>
+            <div className="flex-1 space-y-6 flex flex-col justify-center">
+              <div className="space-y-2 cursor-pointer group" onClick={() => openDocDrill("Uploads", 142)}>
+                <div className="flex justify-between text-xs text-muted-foreground group-hover:text-primary transition-colors"><span>Uploads (Today)</span> <span className="font-bold text-foreground">142 docs</span></div>
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden"><div className="h-full bg-emerald-500 rounded-full group-hover:brightness-110 transition-all" style={{ width: '65%' }}></div></div>
+              </div>
+              <div className="space-y-2 cursor-pointer group" onClick={() => openDocDrill("Downloads", 890)}>
+                <div className="flex justify-between text-xs text-muted-foreground group-hover:text-primary transition-colors"><span>Downloads (Today)</span> <span className="font-bold text-foreground">890 docs</span></div>
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden"><div className="h-full bg-amber-500 rounded-full group-hover:brightness-110 transition-all" style={{ width: '85%' }}></div></div>
+              </div>
+              <div className="pt-4 border-t border-border/50 text-xs">
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="flex items-center gap-1.5 text-muted-foreground w-max cursor-help">
+                        <Settings className="h-4 w-4 text-sky-500" /> {loginConfigChanges} Config Changes this week <Info className="h-3 w-3 opacity-50" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="text-xs">Counts updates to login page text and branding elements.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
           </div>
-        </div>
+        ),
+      },
+      {
+        id: 'it-module-chart',
+        defaultLayout: { x: 0, y: 3, w: 12, h: 2, minW: 6, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 shadow-sm h-full flex flex-col">
+            <h3 className="font-heading font-semibold text-sm mb-4">Top Module Interactions</h3>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={moduleUsage} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={0} angle={-35} textAnchor="end" />
+                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <RechartsTooltip cursor={{ fill: 'transparent' }} />
+                  <Bar dataKey="interactions" radius={[4, 4, 0, 0]}>
+                    {moduleUsage.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} cursor="pointer" onClick={() => openModuleDrill(entry.name, entry.interactions)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ),
+      },
+    ];
 
-        <div className="bg-card rounded-lg border p-5 shadow-sm">
-           <h3 className="font-heading font-semibold text-sm mb-4">Top Module Interactions</h3>
-           <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={moduleUsage} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} interval={0} angle={-35} textAnchor="end" />
-                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                <RechartsTooltip cursor={{ fill: 'transparent' }} />
-                <Bar dataKey="interactions" radius={[4, 4, 0, 0]}>
-                  {moduleUsage.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} cursor="pointer" onClick={() => openModuleDrill(entry.name, entry.interactions)} />
-                  ))}
-                </Bar>
-              </BarChart>
-           </ResponsiveContainer>
-        </div>
+    return (
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <DraggableDashboard key="it-admin" cards={itAdminCards} editMode={editMode} onEditModeChange={setEditMode} />
       </div>
     );
   };
 
   /* ── RM Orix View ── */
   const renderRM = () => {
-    // Dynamically filter dash references via global FilterContext to ensure total consistency
     const dashContracts = contracts;
     const dashInvoices = invoices;
     const dashTickets = tickets;
 
-    const quotesSub = Math.floor(dashContracts.length * 1.5);
-    const quotesPend = Math.floor(quotesSub * 0.25);
-    const contractsInProgress = Math.floor(dashContracts.length * 0.2) + 1;
+    const quotesSub = 24;
+    const quotesPend = 8;
+    const contractsInProgress = dashContracts.filter(c => c.status === 'Disbursed').length;
     const invOwnClients = dashInvoices.filter(i => i.status !== 'Paid').length;
-    const leaseDisbursed = dashContracts.filter(c => c.status === 'Disbursed').length; // Mock current month
-    const renewals30 = getExpiringLeases(dashContracts, 0, 30).length;
+    const leaseDisbursed = dashContracts.filter(c => c.status === 'Disbursed' && c.startDate.startsWith('2026-04')).length;
     const openSupport = dashTickets.filter(t => t.status === 'Open' || t.status === 'In Progress').length;
 
-    // Payment health breakdown
     const healthData = healthClientFilter.length === 0
       ? [ { name: "Good", value: 65, fill: "hsl(142,71%,45%)" }, { name: "At Risk", value: 20, fill: "hsl(38,92%,50%)" }, { name: "Overdue", value: 15, fill: "hsl(0,72%,51%)" } ]
       : [ { name: "Good", value: 85, fill: "hsl(142,71%,45%)" }, { name: "At Risk", value: 5, fill: "hsl(38,92%,50%)" }, { name: "Overdue", value: 10, fill: "hsl(0,72%,51%)" } ];
@@ -295,7 +327,6 @@ export default function Dashboard() {
       const sourceInvoices = healthClientFilter.length > 0 ? invoices.filter(i => healthClientFilter.includes(i.clientName)) : invoices;
       const mappedStatus = status === "Good" ? "Paid" : status === "At Risk" ? "Pending" : "Overdue";
       const relevantInvoices = sourceInvoices.filter(i => i.status === mappedStatus);
-      
       setDrillModal({
         title: `Client Payment Health (${status})`,
         columns: [
@@ -304,12 +335,7 @@ export default function Dashboard() {
           { key: 'value', label: 'Value', type: 'currency' },
           { key: 'status', label: 'Status', type: 'status' }
         ],
-        rows: relevantInvoices.map(inv => ({
-          id: inv.id,
-          client: inv.clientName,
-          value: inv.amount,
-          status: inv.status
-        })),
+        rows: relevantInvoices.map(inv => ({ id: inv.id, client: inv.clientName, value: inv.amount, status: inv.status })),
         summary: [{ label: 'Total Invoices', value: String(relevantInvoices.length) }, { label: 'Health Segment', value: `${percentage}%` }]
       });
     };
@@ -317,90 +343,119 @@ export default function Dashboard() {
     const uniqueClients = Array.from(new Set(contracts.map(c => c.clientName)));
     const clientOptions = uniqueClients.filter(Boolean).map(c => ({ label: c, value: c }));
 
+    /* ── Card content definitions ── */
+    const rmCards: DashboardCardDef[] = [
+      {
+        id: 'kpi-quotes',
+        defaultLayout: { x: 0, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Quotes Submitted" value={quotesSub} icon={<FileText className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" insight={`${quotesPend} currently pending approval`} />,
+      },
+      {
+        id: 'kpi-leases',
+        defaultLayout: { x: 3, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Leases In Progress" value={contractsInProgress} icon={<Layers className="h-5 w-5 text-indigo-500" />} iconBg="bg-indigo-50 dark:bg-indigo-900/20" insight={clientFilter.length > 0 ? "Filtered" : "Across all active clients"} />,
+      },
+      {
+        id: 'kpi-disbursed',
+        defaultLayout: { x: 6, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Lease Disbursements" value={leaseDisbursed} icon={<TrendingUp className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20" insight="Successfully disbursed this month" />,
+      },
+      {
+        id: 'kpi-invoices',
+        defaultLayout: { x: 9, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Outstanding Invoices" value={invOwnClients} icon={<DollarSign className="h-5 w-5 text-amber-500" />} iconBg="bg-amber-50 dark:bg-amber-900/20" valueColor="text-amber-600" insight="Requires follow up" onClick={() => navigate('/invoices')} />,
+      },
+      {
+        id: 'payment-health',
+        defaultLayout: { x: 0, y: 1, w: 4, h: 2, minW: 3, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col">
+            <div className="flex justify-between items-center mb-4 gap-2">
+              <h3 className="font-heading font-semibold text-sm">Client Payment Health</h3>
+              <MultiSelect options={clientOptions} selected={healthClientFilter} onChange={setHealthClientFilter} placeholder="Filter Clients..." className="h-7 min-h-7 text-[10px] w-[140px]" />
+            </div>
+            <div className="flex-1 flex items-center justify-center relative">
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={healthData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} dataKey="value" stroke="none">
+                    {healthData.map((e, i) => <Cell key={i} fill={e.fill} className="cursor-pointer hover:opacity-80 outline-none" onClick={() => openHealthDrill(e.name, e.value)} />)}
+                  </Pie>
+                  <RechartsTooltip cursor={{ fill: 'transparent' }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-bold">100%</span>
+                <span className="text-[10px] text-muted-foreground uppercase">Covered</span>
+              </div>
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+              <div className="space-y-1"><div className="text-[11px] text-emerald-500 font-medium">Good</div><div className="font-bold">{healthData[0].value}%</div></div>
+              <div className="space-y-1"><div className="text-[11px] text-amber-500 font-medium">At Risk</div><div className="font-bold">{healthData[1].value}%</div></div>
+              <div className="space-y-1"><div className="text-[11px] text-rose-500 font-medium">Overdue</div><div className="font-bold">{healthData[2].value}%</div></div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'open-tickets',
+        defaultLayout: { x: 4, y: 1, w: 4, h: 2, minW: 3, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-heading font-semibold text-sm flex items-center gap-2"><TicketPlus className="h-4 w-4 text-sky-500" /> Open Tickets (Own Clients)</h3>
+              <span className="text-xs bg-sky-50 dark:bg-sky-900/20 text-sky-600 px-2.5 py-1 rounded-full font-medium">{openSupport} Active</span>
+            </div>
+            <div className="space-y-3 flex-1 overflow-auto">
+              {tickets.filter(t => t.status === 'Open' || t.status === 'In Progress').slice(0, 5).map(t => (
+                <div key={t.id} className="flex justify-between border-b pb-2 last:border-0 last:pb-0 border-border/50">
+                  <div>
+                    <p className="font-medium text-sm">{t.subject}</p>
+                    <p className="text-xs text-muted-foreground">{t.clientName} · {t.ticketNo}</p>
+                  </div>
+                  <div className="text-right shrink-0 ml-2">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${t.priority === 'Critical' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>{t.priority}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'renewals',
+        defaultLayout: { x: 8, y: 1, w: 4, h: 2, minW: 3, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-heading font-semibold text-sm flex items-center gap-2"><Calendar className="h-4 w-4 text-amber-500" /> Upcoming Renewals</h3>
+              <p className="text-xs text-muted-foreground">Next 30 Days</p>
+            </div>
+            <div className="space-y-3 flex-1 overflow-auto">
+              {getExpiringLeases(contracts, 0, 30).slice(0, 5).map(c => (
+                <div key={c.id} className="flex justify-between border-b pb-2 last:border-0 last:pb-0 border-border/50">
+                  <div>
+                    <p className="font-medium text-sm">{c.contractNo}</p>
+                    <p className="text-xs text-muted-foreground">{c.clientName} · {c.assetType}</p>
+                  </div>
+                  <div className="text-right shrink-0 ml-2">
+                    <p className="font-bold text-sm text-amber-600">{formatDate(c.endDate)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ),
+      },
+    ];
+
     return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard label="Quotes Submitted" value={quotesSub} icon={<FileText className="h-5 w-5 text-primary" />} iconBg="bg-primary/10" insight={`${quotesPend} currently pending approval`} />
-          <KPICard label="Leases In Progress" value={contractsInProgress} icon={<Layers className="h-5 w-5 text-indigo-500" />} iconBg="bg-indigo-50 dark:bg-indigo-900/20" insight={clientFilter.length > 0 ? "Filtered" : "Across all active clients"} />
-          <KPICard label="Lease Disbursements" value={leaseDisbursed} icon={<TrendingUp className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20" insight="Successfully disbursed this month" />
-          <KPICard label="Outstanding Invoices Count" value={invOwnClients} icon={<DollarSign className="h-5 w-5 text-amber-500" />} iconBg="bg-amber-50 dark:bg-amber-900/20" valueColor="text-amber-600" insight="Requires follow up" onClick={() => navigate('/invoices')} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-card rounded-lg border p-5 flex flex-col">
-             <div className="flex justify-between items-center mb-4 gap-2">
-               <h3 className="font-heading font-semibold text-sm">Client Payment Health</h3>
-               <MultiSelect 
-                 options={clientOptions} 
-                 selected={healthClientFilter} 
-                 onChange={setHealthClientFilter} 
-                 placeholder="Filter Clients..."
-                 className="h-7 min-h-7 text-[10px] w-[140px]"
-               />
-             </div>
-             <div className="flex-1 flex items-center justify-center relative">
-               <ResponsiveContainer width="100%" height={200}>
-                 <PieChart>
-                    <Pie data={healthData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="value" stroke="none">
-                      {healthData.map((e, i) => <Cell key={i} fill={e.fill} className="cursor-pointer hover:opacity-80 outline-none" onClick={() => openHealthDrill(e.name, e.value)} />)}
-                    </Pie>
-                    <RechartsTooltip cursor={{ fill: 'transparent' }} />
-                 </PieChart>
-               </ResponsiveContainer>
-               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                 <span className="text-2xl font-bold">100%</span>
-                 <span className="text-[10px] text-muted-foreground uppercase">Covered</span>
-               </div>
-             </div>
-             <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-               <div className="space-y-1"><div className="text-[11px] text-emerald-500 font-medium">Good</div><div className="font-bold">{healthData[0].value}%</div></div>
-               <div className="space-y-1"><div className="text-[11px] text-amber-500 font-medium">At Risk</div><div className="font-bold">{healthData[1].value}%</div></div>
-               <div className="space-y-1"><div className="text-[11px] text-rose-500 font-medium">Overdue</div><div className="font-bold">{healthData[2].value}%</div></div>
-             </div>
-          </div>
-          
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-card rounded-lg border p-5 shadow-sm">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-heading font-semibold text-sm flex items-center gap-2"><TicketPlus className="h-4 w-4 text-sky-500" /> Open Tickets (Own Clients)</h3>
-                  <span className="text-xs bg-sky-50 dark:bg-sky-900/20 text-sky-600 px-2.5 py-1 rounded-full font-medium">{openSupport} Active</span>
-                </div>
-                <div className="space-y-3">
-                  {tickets.filter(t => t.status === 'Open' || t.status === 'In Progress').slice(0,3).map(t =>(
-                     <div key={t.id} className="flex justify-between border-b pb-2 last:border-0 last:pb-0 border-border/50">
-                       <div>
-                         <p className="font-medium text-sm">{t.subject}</p>
-                         <p className="text-xs text-muted-foreground">{t.clientName} · {t.ticketNo}</p>
-                       </div>
-                       <div className="text-right">
-                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${t.priority==='Critical'?'bg-rose-100 text-rose-700': 'bg-amber-100 text-amber-700'}`}>{t.priority}</span>
-                       </div>
-                     </div>
-                  ))}
-                </div>
-            </div>
-
-            <div className="bg-card rounded-lg border p-5 shadow-sm">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-heading font-semibold text-sm flex items-center gap-2"><Calendar className="h-4 w-4 text-amber-500" /> Upcoming Renewals</h3>
-                  <p className="text-xs text-muted-foreground">Next 30 Days</p>
-                </div>
-                <div className="space-y-3">
-                  {getExpiringLeases(contracts, 0, 30).slice(0,3).map(c =>(
-                     <div key={c.id} className="flex justify-between border-b pb-2 last:border-0 last:pb-0 border-border/50">
-                       <div>
-                         <p className="font-medium text-sm">{c.contractNo}</p>
-                         <p className="text-xs text-muted-foreground">{c.clientName} · {c.assetType}</p>
-                       </div>
-                       <div className="text-right">
-                         <p className="font-bold text-sm text-amber-600">{formatDate(c.endDate)}</p>
-                       </div>
-                     </div>
-                  ))}
-                </div>
-            </div>
-          </div>
-        </div>
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <DraggableDashboard
+          key="rm-orix"
+          cards={rmCards}
+          editMode={editMode}
+          onEditModeChange={setEditMode}
+        />
       </div>
     );
   };
@@ -416,7 +471,7 @@ export default function Dashboard() {
 
     const openFacilityDrill = (segment: string) => {
       // Filter for active/disbursed contracts that contribute to utilization
-      const relevantContracts = contracts.filter(c => c.status === 'Disbursed' || c.status === 'Partially Disbursed');
+      const relevantContracts = contracts.filter(c => c.status === 'Disbursed');
       
       setDrillModal({
         title: `Facility Utilization Breakdown (${segment})`,
@@ -463,128 +518,346 @@ export default function Dashboard() {
       { name: "IT Assets", value: dashboardKPIs.assetsByType["IT Equipment"], fill: "hsl(199,89%,48%)" }
     ];
 
+    const hrCards: DashboardCardDef[] = [
+      {
+        id: 'hr-kpi-assets',
+        defaultLayout: { x: 0, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Assigned Assets" value={dashboardKPIs.totalAssets} icon={<Layers className="h-5 w-5 text-indigo-500" />} iconBg="bg-indigo-50 dark:bg-indigo-900/20" insight="Active employee assignments" onClick={() => navigate('/vehicles')} />,
+      },
+      {
+        id: 'hr-kpi-disbursed',
+        defaultLayout: { x: 3, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Disbursed (FY26)" value={contracts.filter(c => c.status === 'Disbursed' && c.startDate.startsWith('2026')).length} icon={<TrendingUp className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20" insight="New leases funded this year" />,
+      },
+      {
+        id: 'hr-kpi-overdue',
+        defaultLayout: { x: 6, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="Overdue Invoices" value={overdueInvs.length} icon={<AlertTriangle className="h-5 w-5 text-rose-500" />} iconBg="bg-rose-50 dark:bg-rose-900/20" valueColor="text-rose-600" insight={`Total Value: ${formatCurrency(overdueAmt)}`} onClick={() => navigate('/invoices')} />,
+      },
+      {
+        id: 'hr-kpi-sla',
+        defaultLayout: { x: 9, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
+        content: <KPICard label="SLA Compliance" value="98.2%" icon={<ShieldCheck className="h-5 w-5 text-sky-500" />} iconBg="bg-sky-50 dark:bg-sky-900/20" valueColor="text-emerald-600" insight="Orix service commitments met" />,
+      },
+      {
+        id: 'hr-facility',
+        defaultLayout: { x: 0, y: 1, w: 4, h: 2, minW: 3, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 shadow-sm h-full flex flex-col">
+            <h3 className="font-heading font-semibold text-sm mb-2">Total Facility Limit</h3>
+            <div className="relative flex-1 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height={170}>
+                <PieChart>
+                  <Pie data={limitData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} dataKey="value" stroke="none">
+                    {limitData.map((d, i) => (
+                      <Cell key={i} fill={d.fill} className="cursor-pointer hover:opacity-80 transition-opacity outline-none" onClick={() => openFacilityDrill(d.name)} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip formatter={(v: number) => formatCurrency(v)} cursor={{fill: 'transparent'}} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Utilized</p>
+                <p className="text-xl font-bold font-heading text-foreground">{((facilityUtilized / facilityTotal) * 100).toFixed(1)}%</p>
+              </div>
+            </div>
+            <div className="flex justify-between items-center mx-2 mt-1 mb-2">
+              <div className="flex flex-col">
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[hsl(221,83%,53%)]" /> Utilized</span>
+                <span className="text-sm font-semibold leading-tight">{formatCurrency(facilityUtilized)}</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-200" /> Available</span>
+                <span className="text-sm font-semibold leading-tight">{formatCurrency(Math.max(facilityTotal - facilityUtilized, 0))}</span>
+              </div>
+            </div>
+            <div className="border-t border-border/50 pt-2 text-xs text-muted-foreground">
+              <span>Facility Valid: <strong>01 Jan 2024 - 31 Dec 2028</strong></span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'hr-expiry-forecast',
+        defaultLayout: { x: 4, y: 1, w: 4, h: 2, minW: 3, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 shadow-sm h-full flex flex-col justify-between">
+            <h3 className="font-heading font-semibold text-sm mb-4">Lease Expiry Forecast</h3>
+            <div className="space-y-5 flex-1">
+              <div>
+                <div className="flex justify-between items-end text-xs mb-1.5">
+                  <span className="text-orange-500 font-medium">Coming 30 Days</span>
+                  <div className="text-right"><span className="font-bold">{exp30} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp30Val)} at risk</p></div>
+                </div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: `${Math.max((exp30/maxExp)*100, 2)}%`}}></div></div>
+              </div>
+              <div>
+                <div className="flex justify-between items-end text-xs mb-1.5">
+                  <span className="text-amber-500 font-medium">31 - 60 Days</span>
+                  <div className="text-right"><span className="font-bold">{exp60} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp60Val)} at risk</p></div>
+                </div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-amber-400 to-amber-500" style={{ width: `${Math.max((exp60/maxExp)*100, 2)}%`}}></div></div>
+              </div>
+              <div>
+                <div className="flex justify-between items-end text-xs mb-1.5">
+                  <span className="text-yellow-500 font-medium">61 - 90 Days</span>
+                  <div className="text-right"><span className="font-bold">{exp90} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp90Val)} at risk</p></div>
+                </div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500" style={{ width: `${Math.max((exp90/maxExp)*100, 2)}%`}}></div></div>
+              </div>
+            </div>
+            <Button variant="outline" className="w-full mt-4 text-xs h-8" onClick={() => navigate('/contracts')}>Review All Renewals</Button>
+          </div>
+        ),
+      },
+      {
+        id: 'hr-asset-class',
+        defaultLayout: { x: 8, y: 1, w: 2, h: 1, minW: 2, minH: 1 },
+        content: (
+          <div className="bg-card rounded-lg border p-4 shadow-sm h-full flex items-center justify-between">
+            <div>
+              <h3 className="font-heading font-semibold text-sm">Asset Class</h3>
+              <div className="flex gap-4 mt-2">
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[hsl(210,52%,40%)]" /> Vehicles ({assetPie[0].value})</span>
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[hsl(199,89%,48%)]" /> IT ({assetPie[1].value})</span>
+              </div>
+            </div>
+            <div className="h-16 w-16 shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={assetPie} cx="50%" cy="50%" innerRadius={18} outerRadius={30} dataKey="value" stroke="none">
+                    {assetPie.map((e, i) => <Cell key={i} fill={e.fill} />)}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'hr-pending-actions',
+        defaultLayout: { x: 10, y: 1, w: 2, h: 1, minW: 2, minH: 1 },
+        content: (
+          <div className="bg-card rounded-lg border p-4 shadow-sm h-full">
+            <h3 className="font-heading font-semibold text-sm mb-3">Pending Actions</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">e-KYC Processing</span>
+                <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold">2 Pending</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Document Signatures</span>
+                <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold">5 Pending</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Tickets Raised (Month)</span>
+                <span className="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded font-bold">14 Open</span>
+              </div>
+            </div>
+          </div>
+        ),
+      },
+    ];
+
     return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {/* KPI Row 1 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard label="Assigned Assets" value={dashboardKPIs.totalAssets} icon={<Layers className="h-5 w-5 text-indigo-500" />} iconBg="bg-indigo-50 dark:bg-indigo-900/20" insight="Active employee assignments" onClick={() => navigate('/vehicles')} />
-          <KPICard label="Disbursed (FY26)" value="12" icon={<TrendingUp className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20" insight="New leases funded this year" />
-          <KPICard label="Overdue Invoices" value={overdueInvs.length} icon={<AlertTriangle className="h-5 w-5 text-rose-500" />} iconBg="bg-rose-50 dark:bg-rose-900/20" valueColor="text-rose-600" insight={`Total Value: ${formatCurrency(overdueAmt)}`} onClick={() => navigate('/invoices')} />
-          <KPICard label="SLA Compliance" value="98.2%" icon={<ShieldCheck className="h-5 w-5 text-sky-500" />} iconBg="bg-sky-50 dark:bg-sky-900/20" valueColor="text-emerald-600" insight="Orix service commitments met" />
-        </div>
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <DraggableDashboard key="client-hr" cards={hrCards} editMode={editMode} onEditModeChange={setEditMode} />
+      </div>
+    );
+  };
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="bg-card rounded-lg border p-5 shadow-sm">
-             <h3 className="font-heading font-semibold text-sm mb-2">Total Facility Limit</h3>
-             <div className="relative h-[180px] w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={limitData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="value" stroke="none">
-                      {limitData.map((d, i) => (
-                        <Cell 
-                          key={i} 
-                          fill={d.fill} 
-                          className="cursor-pointer hover:opacity-80 transition-opacity outline-none" 
-                          onClick={() => openFacilityDrill(d.name)}
-                        />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip formatter={(v: number) => formatCurrency(v)} cursor={{fill: 'transparent'}} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Utilized</p>
-                  <p className="text-xl font-bold font-heading text-foreground">{((facilityUtilized / facilityTotal) * 100).toFixed(1)}%</p>
-                </div>
-             </div>
-             <div className="flex justify-between items-center mx-2 mt-1 mb-3">
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-muted-foreground flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[hsl(221,83%,53%)]" /> Utilized</span>
-                  <span className="text-sm font-semibold leading-tight">{formatCurrency(facilityUtilized)}</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[11px] text-muted-foreground flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-200" /> Available</span>
-                  <span className="text-sm font-semibold leading-tight">{formatCurrency(Math.max(facilityTotal - facilityUtilized, 0))}</span>
-                </div>
-             </div>
-             <div className="border-t border-border/50 pt-3 text-xs text-muted-foreground flex justify-between">
-                <span>Facility Valid: <strong>01 Jan 2024 - 31 Dec 2028</strong></span>
-             </div>
+  /* ── Individual User View (Viewer role) ── */
+  const renderIndividual = () => {
+    const d = individualLeaseData;
+    const progress = Math.round((d.elapsedMonths / d.tenureMonths) * 100);
+    const remainingMonths = d.tenureMonths - d.elapsedMonths;
+    const myTickets = tickets.filter(t => t.clientId === 'c1').slice(0, 5);
+    const insuranceExpired = d.insuranceStatus === 'Expired';
+    const insuranceExpiring = d.insuranceStatus === 'Expiring Soon';
+
+    const individualCards: DashboardCardDef[] = [
+      {
+        id: 'ind-lease-summary',
+        defaultLayout: { x: 0, y: 0, w: 6, h: 2, minW: 3, minH: 1 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col justify-between shadow-sm">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">My Lease</p>
+                <p className="text-lg font-bold mt-1 font-heading">{d.contractNo}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{d.assetDescription} · {d.registrationNo}</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Car className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="flex justify-between text-xs mb-1.5">
+                <span className="text-muted-foreground">Lease Progress</span>
+                <span className="font-semibold text-primary">{progress}%</span>
+              </div>
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                <span>{d.leaseStartDate}</span>
+                <span>{remainingMonths} months remaining</span>
+                <span>{d.leaseEndDate}</span>
+              </div>
+            </div>
           </div>
-
-          <div className="bg-card rounded-lg border p-5 shadow-sm flex flex-col justify-between">
-             <h3 className="font-heading font-semibold text-sm mb-4">Lease Expiry Forecast</h3>
-             <div className="space-y-5">
-                <div>
-                   <div className="flex justify-between items-end text-xs mb-1.5">
-                      <span className="text-orange-500 font-medium">Coming 30 Days</span>
-                      <div className="text-right"><span className="font-bold">{exp30} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp30Val)} at risk</p></div>
-                   </div>
-                   <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: `${Math.max((exp30/maxExp)*100, 2)}%`}}></div></div>
-                </div>
-                <div>
-                   <div className="flex justify-between items-end text-xs mb-1.5">
-                      <span className="text-amber-500 font-medium">31 - 60 Days</span>
-                      <div className="text-right"><span className="font-bold">{exp60} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp60Val)} at risk</p></div>
-                   </div>
-                   <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-amber-400 to-amber-500" style={{ width: `${Math.max((exp60/maxExp)*100, 2)}%`}}></div></div>
-                </div>
-                <div>
-                   <div className="flex justify-between items-end text-xs mb-1.5">
-                      <span className="text-yellow-500 font-medium">61 - 90 Days</span>
-                      <div className="text-right"><span className="font-bold">{exp90} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp90Val)} at risk</p></div>
-                   </div>
-                   <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500" style={{ width: `${Math.max((exp90/maxExp)*100, 2)}%`}}></div></div>
-                </div>
-             </div>
-             <Button variant="outline" className="w-full mt-6 text-xs h-8" onClick={() => navigate('/contracts')}>Review All Renewals</Button>
+        ),
+      },
+      {
+        id: 'ind-next-payment',
+        defaultLayout: { x: 6, y: 0, w: 3, h: 2, minW: 2, minH: 1 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col justify-between shadow-sm">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Next Payment</p>
+                <p className="text-2xl font-bold mt-1.5 font-heading">{formatCurrency(d.nextPaymentAmount)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 border-t border-border/50 pt-2">Due: {new Date(d.nextPaymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                <IndianRupee className="h-5 w-5 text-emerald-600" />
+              </div>
+            </div>
           </div>
-
-          <div className="space-y-4">
-            <div className="bg-card rounded-lg border p-4 shadow-sm flex items-center justify-between">
-               <div>
-                  <h3 className="font-heading font-semibold text-sm">Asset Class</h3>
-                  <div className="flex gap-4 mt-2">
-                     <span className="text-[11px] text-muted-foreground flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[hsl(210,52%,40%)]" /> Vehicles ({assetPie[0].value})</span>
-                     <span className="text-[11px] text-muted-foreground flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[hsl(199,89%,48%)]" /> IT ({assetPie[1].value})</span>
+        ),
+      },
+      {
+        id: 'ind-total-paid',
+        defaultLayout: { x: 9, y: 0, w: 3, h: 2, minW: 2, minH: 1 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col justify-between shadow-sm">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Amount Paid (Total)</p>
+                <p className="text-2xl font-bold mt-1.5 font-heading">{formatCurrency(d.amountPaid)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 border-t border-border/50 pt-2">{d.elapsedMonths}/{d.tenureMonths} rentals completed</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shrink-0">
+                <CreditCard className="h-5 w-5 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'ind-insurance',
+        defaultLayout: { x: 9, y: 2, w: 3, h: 2, minW: 2, minH: 1 },
+        content: (
+          <div className={`rounded-lg border p-5 h-full flex flex-col justify-between shadow-sm ${
+            insuranceExpired ? 'bg-rose-50 dark:bg-rose-900/10 border-rose-200' :
+            insuranceExpiring ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200' :
+            'bg-card'
+          }`}>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Insurance</p>
+                <p className={`text-lg font-bold mt-1.5 font-heading ${
+                  insuranceExpired ? 'text-rose-600' : insuranceExpiring ? 'text-amber-600' : 'text-emerald-600'
+                }`}>{d.insuranceStatus}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 border-t border-border/50 pt-2">Exp: {d.insuranceExpiryDate}</p>
+              </div>
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                insuranceExpired ? 'bg-rose-100' : insuranceExpiring ? 'bg-amber-100' : 'bg-emerald-50'
+              }`}>
+                <ShieldCheck className={`h-5 w-5 ${insuranceExpired ? 'text-rose-600' : insuranceExpiring ? 'text-amber-600' : 'text-emerald-600'}`} />
+              </div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'ind-tickets',
+        defaultLayout: { x: 0, y: 1, w: 5, h: 2, minW: 3, minH: 2 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-heading font-semibold text-sm flex items-center gap-2"><TicketPlus className="h-4 w-4 text-sky-500" /> My Service Requests</h3>
+              <button onClick={() => setTicketModalOpen(true)} className="text-[10px] font-semibold bg-primary text-white rounded px-2 py-1 hover:brightness-110 transition-all">+ Raise</button>
+            </div>
+            <div className="space-y-3 flex-1 overflow-auto">
+              {myTickets.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center pt-6">No active service requests</p>
+              ) : myTickets.map(t => (
+                <div key={t.id} className="flex justify-between border-b pb-2 last:border-0 last:pb-0 border-border/50">
+                  <div>
+                    <p className="font-medium text-sm">{t.subject}</p>
+                    <p className="text-xs text-muted-foreground">{t.ticketNo} · {t.status}</p>
                   </div>
-               </div>
-               <div className="h-16 w-16">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={assetPie} cx="50%" cy="50%" innerRadius={18} outerRadius={30} dataKey="value" stroke="none">
-                        {assetPie.map((e,i)=><Cell key={i} fill={e.fill} />)}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-               </div>
-            </div>
-
-            <div className="bg-card rounded-lg border p-4 shadow-sm">
-               <h3 className="font-heading font-semibold text-sm mb-3">Pending Actions Log</h3>
-               <div className="space-y-2">
-                 <div className="flex justify-between items-center">
-                   <span className="text-xs text-muted-foreground">e-KYC Processing</span>
-                   <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold">2 Pending</span>
-                 </div>
-                 <div className="flex justify-between items-center">
-                   <span className="text-xs text-muted-foreground">Document Signatures</span>
-                   <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold">5 Pending</span>
-                 </div>
-                 <div className="flex justify-between items-center">
-                   <span className="text-xs text-muted-foreground">Tickets Raised (Month)</span>
-                   <span className="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded font-bold">14 Open</span>
-                 </div>
-               </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded h-fit ${
+                    t.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                  }`}>{t.priority}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        ),
+      },
+      {
+        id: 'ind-contacts',
+        defaultLayout: { x: 5, y: 1, w: 3, h: 2, minW: 2, minH: 1 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col shadow-sm">
+            <h3 className="font-heading font-semibold text-sm mb-4 flex items-center gap-2"><User2 className="h-4 w-4 text-primary" /> My Support Contacts</h3>
+            <div className="space-y-4 flex-1">
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-[10px] text-muted-foreground uppercase font-medium mb-1">Vehicle Manager</p>
+                <p className="font-semibold text-sm">{d.vehicleManagerName}</p>
+                <p className="text-xs text-muted-foreground">{d.vehicleManagerEmail}</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-[10px] text-muted-foreground uppercase font-medium mb-1">HR Manager</p>
+                <p className="font-semibold text-sm">{d.hrManagerName}</p>
+                <p className="text-xs text-muted-foreground">{d.hrManagerEmail}</p>
+              </div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'ind-residual',
+        defaultLayout: { x: 8, y: 1, w: 4, h: 2, minW: 3, minH: 1 },
+        content: (
+          <div className="bg-card rounded-lg border p-5 h-full flex flex-col shadow-sm">
+            <h3 className="font-heading font-semibold text-sm mb-4 flex items-center gap-2"><IndianRupee className="h-4 w-4 text-amber-500" /> Lease Value Summary</h3>
+            <div className="space-y-3 flex-1">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Total Lease Value</span>
+                <span className="font-bold text-sm">{formatCurrency(d.totalLeaseValue)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Amount Paid</span>
+                <span className="font-bold text-sm text-emerald-600">{formatCurrency(d.amountPaid)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Balance Remaining</span>
+                <span className="font-bold text-sm text-primary">{formatCurrency(d.totalLeaseValue - d.amountPaid)}</span>
+              </div>
+              <div className="border-t border-border/50 pt-3 flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Residual Value (at end)</span>
+                <span className="font-bold text-sm text-amber-600">{formatCurrency(d.residualValue)}</span>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="mt-4 w-full text-xs h-8" onClick={() => navigate('/contracts')}>View Full Lease Details</Button>
+          </div>
+        ),
+      },
+    ];
+
+    return (
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <DraggableDashboard key="individual" cards={individualCards} editMode={editMode} onEditModeChange={setEditMode} />
       </div>
     );
   };
 
   /* ── Router logic ── */
   const renderDashboardLogic = () => {
+     if (user?.isIndividual) return renderIndividual();
      if (role.includes("IT Admin")) return renderITAdmin();
      if (role.includes("RM - Orix")) return renderRM();
      if (role.toLowerCase().includes("hr manager") || isPortalUser) return renderClientHR();
@@ -624,7 +897,9 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {/* Global: Customize Layout toggle — available to all roles */}
+          <CustomizeLayoutButton editMode={editMode} onToggle={() => setEditMode(v => !v)} />
           {isPortalUser && (
             <button onClick={() => setTicketModalOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold bg-primary text-white rounded-lg px-4 py-1.5 hover:brightness-110 transition-all shadow-sm">
               <TicketPlus className="h-3.5 w-3.5" /> Raise Request

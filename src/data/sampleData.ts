@@ -27,7 +27,7 @@ export interface Asset {
   serialNo?: string;
   category?: string;
   condition?: string;
-  leaseStatus: 'Partially Disbursed' | 'Disbursed' | 'Foreclosed';
+  leaseStatus: 'Disbursed' | 'Foreclosed';
 }
 
 export interface Contract {
@@ -145,6 +145,15 @@ const baseContracts: Contract[] = [
   { id: 'ct-dyn3', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D3', assetType: 'Vehicle', leaseType: 'OL', startDate: '2021-01-15', endDate: d75, tenure: 36, monthlyRental: 30000, totalValue: 1080000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
   { id: 'ct-dyn4', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D4', assetType: 'Vehicle', leaseType: 'OL', startDate: '2021-01-15', endDate: d15, tenure: 36, monthlyRental: 22000, totalValue: 792000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
   { id: 'ct-dyn5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D5', assetType: 'IT Equipment', leaseType: 'OL', startDate: '2021-01-15', endDate: d45, tenure: 36, monthlyRental: 12000, totalValue: 432000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  // April 2026 Disbursements
+  { id: 'ct-apr1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2026-A1', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-01', endDate: '2029-03-31', tenure: 36, monthlyRental: 48000, totalValue: 1728000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-apr2', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2026-A2', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-05', endDate: '2029-04-04', tenure: 36, monthlyRental: 52000, totalValue: 1872000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-DEL-002', location: 'Delhi' },
+  { id: 'ct-apr3', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'FL-2026-A3', assetType: 'IT Equipment', leaseType: 'FL', startDate: '2026-04-08', endDate: '2029-04-07', tenure: 36, monthlyRental: 15000, totalValue: 540000, status: 'Disbursed', assetsCount: 10, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-apr4', clientId: 'c2', clientName: 'Reliance Industries', contractNo: 'OL-2026-A4', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-10', endDate: '2029-04-09', tenure: 36, monthlyRental: 35000, totalValue: 1260000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-BLR-003', location: 'Bangalore' },
+  { id: 'ct-apr5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2026-A5', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-12', endDate: '2029-04-11', tenure: 36, monthlyRental: 42000, totalValue: 1512000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-apr6', clientId: 'c2', clientName: 'Reliance Industries', contractNo: 'FL-2026-A6', assetType: 'IT Equipment', leaseType: 'FL', startDate: '2026-04-15', endDate: '2029-04-14', tenure: 36, monthlyRental: 5500, totalValue: 198000, status: 'Disbursed', assetsCount: 5, costCenter: 'CC-BLR-003', location: 'Bangalore' },
+  { id: 'ct-apr7', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2026-A7', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-18', endDate: '2029-04-17', tenure: 36, monthlyRental: 60000, totalValue: 2160000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-DEL-002', location: 'Delhi' },
+  { id: 'ct-apr8', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'FL-2026-A8', assetType: 'IT Equipment', leaseType: 'FL', startDate: '2026-04-20', endDate: '2029-04-19', tenure: 36, monthlyRental: 8000, totalValue: 288000, status: 'Disbursed', assetsCount: 2, costCenter: 'CC-MUM-001', location: 'Mumbai' },
 ];
 
 const baseInvoices: Invoice[] = [
@@ -159,7 +168,7 @@ const generateAssets = (count: number): Asset[] => {
   const vehicleMakes = ['Toyota', 'Honda', 'Tata', 'Mahindra', 'Hyundai', 'TVS', 'Bajaj', 'Royal Enfield'];
   const categories = ['Passenger Car', 'Commercial Vehicle', 'Two Wheeler - Bike', 'Two Wheeler - Scooty'];
   const statuses = ['Active', 'Under Maintenance', 'In Transit', 'Disposed'];
-  const leaseStatuses = ['Partially Disbursed', 'Disbursed', 'Foreclosed'];
+  const leaseStatuses = ['Disbursed', 'Foreclosed'];
 
   for (let i = 0; i < count; i++) {
     const isVehicle = i % 2 === 0;
@@ -177,7 +186,7 @@ const generateAssets = (count: number): Asset[] => {
         assignedTo: roles[i % roles.length], leaseStartDate: '2024-01-01', 
         leaseEndDate: new Date(new Date('2024-01-01').setMonth(new Date('2024-01-01').getMonth() + 36)).toISOString().split('T')[0],
         registrationNo: `${loc.substring(0, 2).toUpperCase()}-1${i}-GEN`, make: vehicleMakes[i % 8], model: model,
-        driver: `Driver ${i}`, insuranceExpiry: '2025-01-01', leaseStatus: leaseStatuses[i % 3] as any
+        driver: `Driver ${i}`, insuranceExpiry: '2025-01-01', leaseStatus: leaseStatuses[i % 2] as any
       });
     } else {
       const isLaptop = i % 3 === 0;
@@ -187,7 +196,7 @@ const generateAssets = (count: number): Asset[] => {
         category: isLaptop ? 'Laptop' : 'Desktop', status: statuses[i % 4] as any, location: loc, costCenter: cc,
         assignedTo: roles[i % roles.length], leaseStartDate: '2024-01-01', 
         leaseEndDate: new Date(new Date('2024-01-01').setMonth(new Date('2024-01-01').getMonth() + 36)).toISOString().split('T')[0],
-        serialNo: `SNGEN-${i}`, condition: i % 2 === 0 ? 'Good' : 'Excellent', leaseStatus: leaseStatuses[i % 3] as any
+        serialNo: `SNGEN-${i}`, condition: i % 2 === 0 ? 'Good' : 'Excellent', leaseStatus: leaseStatuses[i % 2] as any
       });
     }
   }
@@ -196,7 +205,7 @@ const generateAssets = (count: number): Asset[] => {
 
 const generateContracts = (count: number): Contract[] => {
   const result: Contract[] = [];
-  const statuses = ['Partially Disbursed', 'Disbursed', 'Foreclosed'];
+  const statuses = ['Disbursed', 'Foreclosed'];
   const endDates = ['2025-03-31', '2026-09-30', '2026-12-31', '2027-01-01', '2028-06-30'];
   for (let i = 0; i < count; i++) {
     const cl = clients[i % clients.length];
@@ -208,7 +217,7 @@ const generateContracts = (count: number): Contract[] => {
       assetType: i % 2 === 0 ? 'Vehicle' : 'IT Equipment', leaseType, startDate, 
       endDate: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 36)).toISOString().split('T')[0],
       tenure: 36, monthlyRental: 25000 + (i * 1000), totalValue: (25000 + (i * 1000)) * 36,
-      status: statuses[i % 3] as any, assetsCount: 2 + (i % 5), costCenter: costCenters[i % costCenters.length],
+      status: statuses[i % 2] as any, assetsCount: 2 + (i % 5), costCenter: costCenters[i % costCenters.length],
       location: locations[i % locations.length]
     });
   }
