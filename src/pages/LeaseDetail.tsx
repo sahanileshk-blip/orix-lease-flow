@@ -265,7 +265,7 @@ export default function LeaseDetail() {
                         <span className="text-sm font-bold text-emerald-600">{fmt(elapsedMonths * contract.monthlyRental)}</span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b">
-                        <span className="text-xs text-muted-foreground">Remaining Principal</span>
+                        <span className="text-xs text-muted-foreground">Remaining Rentals</span>
                         <span className="text-sm font-bold text-primary">{fmt(contract.totalValue - (elapsedMonths * contract.monthlyRental))}</span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b">

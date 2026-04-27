@@ -24,7 +24,7 @@ const allErpItems = [
   { title: "Invoices", url: "/invoices", icon: Receipt, roles: ["ORIX User", "Finance Manager", "Lease Manager", "Fleet Manager"] },
   { title: "Custom Reports", url: "/reports", icon: FileBarChart, roles: ["ORIX User", "Finance Manager", "Fleet Manager"] },
   { title: "Service Requests", url: "/tickets", icon: TicketPlus, roles: ["all"] },
-  { title: "Document Centre", url: "/documents", icon: FolderOpen, roles: ["all"] },
+  { title: "Document Center", url: "/documents", icon: FolderOpen, roles: ["all"] },
   { title: "Notifications", url: "/notifications", icon: Bell, roles: ["all"], state: { tab: "settings" } },
   { title: "Profile", url: "/profile", icon: User, roles: ["all"] },
   { title: "FAQ", url: "/faq", icon: HelpCircle, roles: ["all"] },
@@ -38,6 +38,7 @@ const adminItems = [
 /* ── Individual User nav (5 modules only) ────────────────────────── */
 const individualItems = [
   { title: "Dashboard",        url: "/",              icon: LayoutDashboard },
+  { title: "Request Quotation", url: "/quotes",       icon: Calculator      },
   { title: "Service Requests", url: "/tickets",       icon: TicketPlus      },
   { title: "Notifications",   url: "/notifications", icon: Bell            },
   { title: "Profile",          url: "/profile",       icon: User            },
@@ -54,7 +55,7 @@ const portalItems = [
   { title: "RV Payments", url: "/portal/rv-payments", icon: BarChart2 },
   { title: "Insurance & Maint.", url: "/portal/insurance", icon: ShieldCheck },
   { title: "Vehicle Closures", url: "/portal/closures", icon: Car },
-  { title: "Document Centre", url: "/portal/documents", icon: FolderOpen },
+  { title: "Document Center", url: "/portal/documents", icon: FolderOpen },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "Profile", url: "/profile", icon: User },
 ];

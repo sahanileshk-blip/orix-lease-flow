@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Plus, FileText, Wrench, Car, Monitor, RefreshCw,
   ReceiptText, DollarSign, FileBarChart, ClipboardList, Settings2,
-  FileSignature, UploadCloud
+  FileSignature, UploadCloud, FolderOpen
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
@@ -45,7 +45,7 @@ const roleActions: Record<string, Action[]> = {
   "Fleet Manager": [
     { label: "Invoice", icon: ReceiptText, navigate: "/invoices", color: "text-violet-500" },
     { label: "Request Quotation", icon: FileSignature, navigate: "/quotes", color: "text-amber-500" },
-    { label: "Upload document", icon: UploadCloud, modal: "Upload Document", color: "text-sky-500" },
+    { label: "Document Center", icon: FolderOpen, navigate: "/documents", color: "text-sky-500" },
     { label: "View custom reports", icon: FileBarChart, navigate: "/reports", color: "text-emerald-500" },
   ],
   "IT Admin (ORIX)": [

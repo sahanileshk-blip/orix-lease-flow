@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Search, Plus, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 const users = [
   { id: 'u1', name: 'Admin Kumar', email: 'admin@orixindia.com', role: 'ORIX Admin', client: 'ORIX', status: 'Active' },
@@ -25,6 +26,17 @@ const UserManagement = () => {
   const filtered = users.filter((u) =>
     !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +130,7 @@ const UserManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((u) => (
+            {paginatedItems.map((u) => (
               <tr key={u.id}>
                 <td className="font-medium">{u.name}</td>
                 <td className="text-muted-foreground">{u.email}</td>
@@ -138,6 +150,15 @@ const UserManagement = () => {
             ))}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
     </AppLayout>
   );

@@ -8,13 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { SaveReportModal } from "@/components/SaveReportModal";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Search, Download, MessageSquarePlus, Save, CreditCard, Building2, Smartphone } from "lucide-react";
+import { Search, Download, MessageSquarePlus, Save, CreditCard, Building2, Smartphone, FileQuestion } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { useFilter } from "@/contexts/FilterContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
@@ -60,6 +61,17 @@ const Invoices = () => {
     return true;
   });
 
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
+
   const currentYear = new Date().getFullYear();
   const totalPaidYTD = invoices
     .filter(i => i.status === 'Paid' && i.paidDate && i.paidDate.startsWith(currentYear.toString()))
@@ -67,40 +79,11 @@ const Invoices = () => {
   const totalPending = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + i.amount, 0);
   const totalOverdue = invoices.filter(i => i.status === 'Overdue').reduce((s, i) => s + i.amount, 0);
 
-  const handleDownloadInvoice = (inv: any) => {
-    const doc = new jsPDF();
-
-    doc.setFontSize(20);
-    doc.text("INVOICE", 14, 22);
-
-    doc.setFontSize(10);
-    doc.text(`Invoice No: ${inv.invoiceNo}`, 14, 30);
-    doc.text(`Date: ${inv.generatedDate}`, 14, 35);
-    doc.text(`Due Date: ${inv.dueDate}`, 14, 40);
-
-    doc.text("BILLED TO:", 14, 50);
-    doc.text(`${inv.clientName}`, 14, 55);
-    doc.text(`Lease ID: ${inv.contractNo}`, 14, 60);
-
-    const baseCost = inv.amount / 1.18;
-    const gstCost = inv.amount - baseCost;
-
-    autoTable(doc, {
-      startY: 70,
-      head: [['Description', 'Amount (INR)']],
-      body: [
-        ['Base Rental', formatCurrency(baseCost)],
-        ['GST (18%)', formatCurrency(gstCost)],
-        ['Total', formatCurrency(inv.amount)],
-      ],
-      theme: 'grid',
+  const handleRequestInvoice = (inv: any) => {
+    toast({
+      title: "Request Submitted",
+      description: `Your request for invoice ${inv.invoiceNo} has been sent to the support team.`,
     });
-
-    const finalY = (doc as any).lastAutoTable.finalY || 100;
-    doc.text(`Status: ${inv.status.toUpperCase()}`, 14, finalY + 10);
-
-    doc.save(`Invoice_${inv.invoiceNo}.pdf`);
-    toast({ title: "Connecting to server...", description: `Downloading ${inv.invoiceNo}` });
   };
 
   return (
@@ -176,7 +159,7 @@ const Invoices = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((inv) => (
+            {paginatedItems.map((inv) => (
               <tr key={inv.id}>
                 <td className="font-medium">{inv.invoiceNo}</td>
                 {user?.isAdmin && <td>{inv.clientName}</td>}
@@ -200,8 +183,8 @@ const Invoices = () => {
                 </td>
                 <td>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary hover:bg-primary/5" onClick={() => handleDownloadInvoice(inv)}>
-                      <Download className="h-3.5 w-3.5" /> PDF
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary hover:bg-primary/5" onClick={() => handleRequestInvoice(inv)}>
+                      <FileQuestion className="h-3.5 w-3.5" /> Request
                     </Button>
                     {(inv.status === 'Pending' || inv.status === 'Overdue') && user?.isPortalUser && (
                       <Button variant="default" size="sm" className="h-7 text-xs bg-primary/10 text-primary hover:bg-primary/20" onClick={() => handlePayNow(inv)}>
@@ -214,6 +197,15 @@ const Invoices = () => {
             ))}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
       <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Invoices" activeFilters={{ search, status: statusFilter.join(','), "start_date": dateRange.start, "end_date": dateRange.end, client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
 

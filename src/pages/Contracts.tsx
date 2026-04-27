@@ -5,14 +5,13 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Download, FileText, RefreshCw, PenLine, Save, MoreHorizontal, ArrowRight } from "lucide-react";
+import { Search, Download, FileText, MoreHorizontal, ArrowRight, Save } from "lucide-react";
 import { SaveReportModal } from "@/components/SaveReportModal";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFilter } from "@/contexts/FilterContext";
-import { MultiSelect } from "@/components/ui/multi-select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
@@ -74,6 +73,17 @@ const Contracts = () => {
     return true;
   });
 
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
+
   const generateRentalSchedule = (contract: any) => {
     const schedule = [];
     const monthlyPrincipal = contract.totalValue * 0.85 / contract.tenure;
@@ -83,14 +93,6 @@ const Contracts = () => {
       schedule.push({ month: i, principal: monthlyPrincipal, interest: monthlyInterest, gst, total: contract.monthlyRental + gst });
     }
     return schedule;
-  };
-
-  const handleExtension = (contractNo: string) => {
-    toast({ title: "Extension Initiated", description: `Extension request for ${contractNo} has been submitted to ORIX team.` });
-  };
-
-  const handleAmendment = (contractNo: string) => {
-    toast({ title: "Amendment Request", description: `Amendment request for ${contractNo} has been submitted. ORIX team will review shortly.` });
   };
 
   return (
@@ -168,7 +170,7 @@ const Contracts = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => (
+            {paginatedItems.map((c) => (
               <tr key={c.id}>
                 <td>
                   <button
@@ -237,6 +239,15 @@ const Contracts = () => {
             </tr>
           </tfoot>
         </table>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
 
       {/* Rental Schedule Modal Only */}

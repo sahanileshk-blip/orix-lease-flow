@@ -49,7 +49,7 @@ export default function PortalDocuments() {
       <div className="page-header">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="page-title">Documents</h1>
+            <h1 className="page-title">Document Center</h1>
             <p className="page-description">{user?.clientName} — Lease documents, certificates, and statements</p>
           </div>
           <label className="flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-semibold hover:bg-muted cursor-pointer transition-colors">

@@ -5,6 +5,7 @@ import { Plus, CheckCircle2, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 const requests = [
   { id: "INS-001", type: "Insurance",    vehicle: "Toyota Innova — KA-01-MN-7890", date: "01 Apr 2026", status: "In Progress", notes: "Renewal due May 2026" },
@@ -23,6 +24,17 @@ export default function InsuranceMaintenance() {
   const [reqType, setReqType] = useState<"Insurance" | "Maintenance">("Insurance");
   const [vehicle, setVehicle] = useState("");
   const [notes, setNotes] = useState("");
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(requests, 5);
 
   return (
     <AppLayout>
@@ -67,7 +79,7 @@ export default function InsuranceMaintenance() {
           <h2 className="font-heading font-semibold text-sm">My Requests</h2>
         </div>
         <div className="divide-y">
-          {requests.map(r => (
+          {paginatedItems.map(r => (
             <div key={r.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
               <div className="flex items-start gap-3">
                 <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${r.type === "Insurance" ? "bg-sky-50 dark:bg-sky-900/20" : "bg-emerald-50 dark:bg-emerald-900/20"}`}>
@@ -86,6 +98,15 @@ export default function InsuranceMaintenance() {
             </div>
           ))}
         </div>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

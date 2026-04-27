@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -22,8 +23,6 @@ const AuditLog = () => {
   const [roleFilter, setRoleFilter] = useState<string[]>([]);
   const [actionFilter, setActionFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
 
   if (!isITAdmin) {
     return (
@@ -59,9 +58,16 @@ const AuditLog = () => {
     return true;
   });
 
-  // Pagination
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
 
   const downloadCSV = () => {
     const headers = ['Timestamp (UTC)', 'User', 'Role', 'Action', 'Module', 'Record Affected', 'IP Address', 'Status'];
@@ -141,7 +147,7 @@ const AuditLog = () => {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {paginated.length > 0 ? paginated.map((log) => (
+                {paginatedItems.length > 0 ? paginatedItems.map((log) => (
                   <tr key={log.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 text-xs whitespace-nowrap font-mono text-muted-foreground">
                       {new Date(log.timestamp).toLocaleString(undefined, { 
@@ -189,31 +195,15 @@ const AuditLog = () => {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-4 py-3 border-t flex items-center justify-between bg-muted/20">
-              <p className="text-xs text-muted-foreground">
-                Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filtered.length)}</span> of <span className="font-medium">{filtered.length}</span> results
-              </p>
-              <div className="flex gap-1">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => prev - 1)}
-                >
-                  Previous
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
+          <TablePagination
+            totalItems={totalItems}
+            pageSize={pageSize}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            startIndex={startIndex}
+            endIndex={endIndex}
+          />
         </div>
       </div>
     </AppLayout>

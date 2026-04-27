@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { SaveReportModal } from "@/components/SaveReportModal";
 import { Download, Save } from "lucide-react";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function downloadCSV(data: any[], filename: string) {
   const headers = ['Quote Code', 'Enquiry', 'Customer', 'Tenure', 'Asset Cost', 'Monthly Rental', 'Total Value', 'Status', 'Date'];
@@ -85,6 +86,17 @@ const Quotes = () => {
     return true;
   });
 
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setDialogOpen(false);
@@ -113,7 +125,7 @@ const Quotes = () => {
           <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'lease-requests.csv')}>
             <Download className="h-4 w-4" /> Download CSV
           </Button>
-          {user?.isPortalUser && (
+          {(user?.isPortalUser || user?.isIndividual) && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-1.5"><Plus className="h-4 w-4" />Request</Button>
@@ -315,7 +327,7 @@ const Quotes = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((q) => (
+            {paginatedItems.map((q) => (
               <tr key={q.id}>
                 <td className="font-medium text-primary cursor-pointer hover:underline">{q.quotationCode}</td>
                 <td>{q.enquiryCode}</td>
@@ -359,6 +371,15 @@ const Quotes = () => {
             ))}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
       <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Lease Requests" activeFilters={{ search, status: statusFilter.join(',') }} />
     </AppLayout>

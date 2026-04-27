@@ -1,10 +1,11 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
-import { CheckCircle2, Clock, AlertCircle, Download, ChevronDown, ChevronUp, Building2, Smartphone } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, Download, ChevronDown, ChevronUp, Building2, Smartphone, FileQuestion } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -47,8 +48,26 @@ export default function BillingPayments() {
     setPaymentModalOpen(true);
   };
 
+  const handleRequestInvoice = (id: string) => {
+    toast({
+      title: "Request Submitted",
+      description: `Your request for invoice ${id} has been sent to the support team.`,
+    });
+  };
+
   const filtered = invoices.filter(i => statusFilter === "all" || i.status === statusFilter);
   const totalOutstanding = invoices.filter(i => i.status !== "Paid").reduce((s, i) => s + i.amount, 0);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
 
   return (
     <AppLayout>
@@ -121,7 +140,7 @@ export default function BillingPayments() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(inv => (
+            {paginatedItems.map(inv => (
               <>
                 <tr key={inv.id} className="border-t hover:bg-muted/30 transition-colors">
                   <td className="py-3 px-4 font-mono text-xs font-medium">{inv.id}</td>
@@ -133,11 +152,9 @@ export default function BillingPayments() {
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${statusColor[inv.status]}`}>{inv.status}</span>
                   </td>
                   <td className="py-3 px-4 flex items-center gap-2">
-                    {inv.status === "Paid" && (
-                      <button className="h-7 w-7 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary/5 transition-colors" title="Download Invoice">
-                        <Download className="h-3.5 w-3.5" />
-                      </button>
-                    )}
+                    <button onClick={() => handleRequestInvoice(inv.id)} className="h-7 w-7 flex items-center justify-center rounded-lg border border-primary/20 text-primary hover:bg-primary/5 transition-colors" title="Request Invoice">
+                      <FileQuestion className="h-3.5 w-3.5" />
+                    </button>
                     <button onClick={() => setExpanded(expanded === inv.id ? null : inv.id)}
                       className="text-muted-foreground hover:text-foreground transition-colors p-1">
                       {expanded === inv.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -150,7 +167,7 @@ export default function BillingPayments() {
                       <div className="flex gap-6 text-xs text-muted-foreground flex-wrap">
                         <span>Paid: <strong className="text-foreground">{fmt(inv.paid)}</strong></span>
                         <span>Outstanding: <strong className="text-foreground">{fmt(inv.amount - inv.paid)}</strong></span>
-                        <button className="flex items-center gap-1 text-primary font-medium hover:underline"><Download className="h-3 w-3" /> Download PDF</button>
+                        <button onClick={() => handleRequestInvoice(inv.id)} className="flex items-center gap-1 text-primary font-medium hover:underline"><FileQuestion className="h-3 w-3" /> Request Invoice</button>
                         {inv.status !== "Paid" && (
                           <button
                             onClick={() => handlePayNow(inv)}
@@ -167,6 +184,15 @@ export default function BillingPayments() {
             ))}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
       {/* Payment Flow Dialog */}
       <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>

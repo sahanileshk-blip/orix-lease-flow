@@ -75,7 +75,6 @@ export default function IndividualDashboard() {
 
   const [editMode, setEditMode] = useState(false);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const handleTicketSubmit = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
@@ -124,22 +123,16 @@ export default function IndividualDashboard() {
           title="Upcoming Payment"
           icon={<CreditCard className="h-4 w-4" />}
           accent="emerald"
-          actionNode={
-            <Button size="sm" onClick={() => setPaymentModalOpen(true)} className="h-7 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-md px-3 font-semibold shadow-sm">
-              <IndianRupee className="h-3 w-3 mr-1" /> Pay Now
-            </Button>
-          }
         >
           <div className="flex items-end justify-between mt-2">
             <div>
               <p className="text-2xl font-bold text-foreground">{fmt(d.nextPaymentAmount)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">Due on {fmtDate(d.nextPaymentDate)}</p>
             </div>
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-              daysToPayment <= 5 ? "bg-red-500/15 text-red-500 border border-red-500/30"
-              : daysToPayment <= 15 ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
-              : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
-            }`}>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${daysToPayment <= 5 ? "bg-red-500/15 text-red-500 border border-red-500/30"
+                : daysToPayment <= 15 ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+                  : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+              }`}>
               {daysToPayment > 0 ? `${daysToPayment}d left` : "Due today"}
             </span>
           </div>
@@ -269,7 +262,7 @@ export default function IndividualDashboard() {
               { label: "Contract", val: d.contractNo },
               { label: "Asset Tag", val: d.assetTag },
               { label: "Lease Start", val: fmtDate(d.leaseStartDate) },
-              { label: "Lease End",   val: fmtDate(d.leaseEndDate)   },
+              { label: "Lease End", val: fmtDate(d.leaseEndDate) },
             ].map(b => (
               <span key={b.label} className="rounded-md border bg-muted/40 px-2.5 py-1 text-muted-foreground">
                 <span className="font-medium text-foreground mr-1">{b.label}:</span>{b.val}
@@ -403,33 +396,6 @@ export default function IndividualDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Payment Flow Dialog ── */}
-      <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Make Payment</DialogTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Select payment method for your upcoming payment.
-              <br /> Amount Due: <span className="font-bold text-foreground">{fmt(d.nextPaymentAmount)}</span>
-            </p>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
-              onClick={() => { toast({ title: "Redirecting...", description: "Connecting to Credit payment gateway." }); setPaymentModalOpen(false); }}>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Building2 className="h-6 w-6" /></div>
-              <span className="font-semibold text-sm">Credit Card</span>
-            </button>
-            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-muted bg-card hover:border-primary hover:bg-primary/5 transition-all outline-none"
-              onClick={() => { toast({ title: "Redirecting...", description: "Opening UPI apps." }); setPaymentModalOpen(false); }}>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Smartphone className="h-6 w-6" /></div>
-              <span className="font-semibold text-sm">UPI Apps</span>
-            </button>
-          </div>
-          <p className="text-[11px] text-center text-muted-foreground mt-4">
-            Payments are processed securely. Your transaction will be reflected instantly.
-          </p>
-        </DialogContent>
-      </Dialog>
     </AppLayout>
   );
 }

@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { CheckCircle2, ChevronRight, Star, Lock } from "lucide-react";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -30,6 +31,19 @@ export default function DealerPortal() {
   const toggleDealer = (id: string) => {
     setSelected(p => p.includes(id) ? p.filter(d => d !== id) : [...p, id]);
   };
+
+  const filteredQuotes = quotes.filter(q => selected.some(s => dealers.find(d => d.id === s)?.name === q.dealer));
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filteredQuotes, 5);
 
   return (
     <AppLayout>
@@ -118,7 +132,7 @@ export default function DealerPortal() {
                 </tr>
               </thead>
               <tbody>
-                {quotes.filter(q => selected.some(s => dealers.find(d => d.id === s)?.name === q.dealer)).map((q, i) => (
+                {paginatedItems.map((q, i) => (
                   <tr key={i} className={`border-t hover:bg-muted/20 transition-colors ${chosenQuote?.dealer === q.dealer ? "bg-primary/5 border-l-2 border-l-primary" : ""}`}>
                     <td className="py-3 px-4 font-medium text-xs">{q.dealer}</td>
                     <td className="py-3 px-4 text-xs">{q.asset}</td>
@@ -135,6 +149,15 @@ export default function DealerPortal() {
                 ))}
               </tbody>
             </table>
+            <TablePagination
+              totalItems={totalItems}
+              pageSize={pageSize}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              startIndex={startIndex}
+              endIndex={endIndex}
+            />
           </div>
           <div className="flex justify-between">
             <button onClick={() => setStep(1)} className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors">← Back</button>

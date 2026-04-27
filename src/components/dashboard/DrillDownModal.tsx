@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { X, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -53,6 +54,17 @@ export function DrillDownModal({ open, onClose, title, month, rows, summary, col
     { key: 'status', label: 'Status', type: 'status', hiddenOnMobile: true },
   ];
 
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(rows, 5);
+
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-5">
@@ -97,10 +109,10 @@ export function DrillDownModal({ open, onClose, title, month, rows, summary, col
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 && (
+              {paginatedItems.length === 0 && (
                 <tr><td colSpan={targetColumns.length} className="text-center py-10 text-muted-foreground text-xs">No records found.</td></tr>
               )}
-              {rows.map((row, i) => (
+              {paginatedItems.map((row, i) => (
                 <tr key={row.id || i} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   {targetColumns.map(col => {
                     const val = row[col.key];
@@ -130,6 +142,15 @@ export function DrillDownModal({ open, onClose, title, month, rows, summary, col
               ))}
             </tbody>
           </table>
+          <TablePagination
+            totalItems={totalItems}
+            pageSize={pageSize}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            startIndex={startIndex}
+            endIndex={endIndex}
+          />
         </div>
       </DialogContent>
     </Dialog>

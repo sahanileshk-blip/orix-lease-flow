@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Download, Filter, TrendingDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 const closureData = [
   { month: "Oct 2025", count: 2, amount: 430000, type: "Normal" },
@@ -34,6 +35,17 @@ export default function VehicleClosures() {
   const [monthFilter, setMonthFilter] = useState("all");
 
   const filtered = closures.filter(c => monthFilter === "all" || c.date.includes(monthFilter));
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
 
   return (
     <AppLayout>
@@ -105,7 +117,7 @@ export default function VehicleClosures() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(c => (
+              {paginatedItems.map(c => (
                 <tr key={c.id} className="border-t hover:bg-muted/30 transition-colors">
                   <td className="py-3 px-4 font-mono text-xs">{c.id}</td>
                   <td className="py-3 px-4 text-xs font-medium">{c.vehicle}</td>
@@ -123,6 +135,15 @@ export default function VehicleClosures() {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            totalItems={totalItems}
+            pageSize={pageSize}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            startIndex={startIndex}
+            endIndex={endIndex}
+          />
         </div>
       </div>
     </AppLayout>

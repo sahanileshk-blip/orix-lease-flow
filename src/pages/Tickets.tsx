@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFilter } from "@/contexts/FilterContext";
 import { SaveReportModal } from "@/components/SaveReportModal";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function downloadCSV(data: any[], filename: string) {
   const headers = ['Ticket No', 'Category', 'Subject', 'Client', 'Priority', 'Status', 'Created', 'SLA Deadline', 'Assigned To', 'Cost Center', 'Location', 'Rating', 'CSAT'];
@@ -65,7 +66,6 @@ const Tickets = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const isIndividual = !!user?.isIndividual;
-
   const filtered = tickets.filter((t) => {
     // Individual users only see their own asset's tickets
     if (isIndividual) {
@@ -79,6 +79,17 @@ const Tickets = () => {
     if (search && !t.subject.toLowerCase().includes(search.toLowerCase()) && !t.ticketNo.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
 
   const closedTickets = tickets.filter(t => t.status === 'Closed' && t.rating);
   const avgRating = closedTickets.length > 0 ? (closedTickets.reduce((s, t) => s + (t.rating || 0), 0) / closedTickets.length).toFixed(1) : '—';
@@ -315,7 +326,7 @@ const Tickets = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((t) => (
+            {paginatedItems.map((t) => (
               <tr key={t.id}>
                 <td className="font-medium">
                   {user?.isAdmin ? (
@@ -365,6 +376,15 @@ const Tickets = () => {
             ))}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
 
       {/* Update Dialog */}

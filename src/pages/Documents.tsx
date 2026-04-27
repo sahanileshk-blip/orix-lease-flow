@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Download, Upload, FileText, AlertTriangle, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function downloadCSV(data: any[], filename: string) {
   const headers = ['Document', 'Client', 'Category', 'Type', 'Version', 'Uploaded', 'Expiry', 'Size'];
@@ -32,11 +33,22 @@ const Documents = () => {
     return true;
   });
 
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
+
   return (
     <AppLayout>
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="page-title">Document Centre</h1>
+          <h1 className="page-title">Document Center</h1>
           <p className="page-description">Upload, manage, and track document versions and expiry</p>
         </div>
         <div className="flex gap-2">
@@ -84,7 +96,7 @@ const Documents = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((d) => (
+            {paginatedItems.map((d) => (
               <tr key={d.id}>
                 <td className="font-medium">
                   <div className="flex items-center gap-2">
@@ -124,6 +136,15 @@ const Documents = () => {
             ))}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
     </AppLayout>
   );

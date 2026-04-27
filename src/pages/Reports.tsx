@@ -9,6 +9,7 @@ import { Download, Mail, Play, Pause, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 export default function Reports() {
   const { reports, toggleStatus, deleteReport, scheduleReport } = useReports();
@@ -21,6 +22,17 @@ export default function Reports() {
   const [freq, setFreq] = useState<ReportFrequency>("weekly");
 
   const myReports = reports.filter(r => r.createdBy === user?.id);
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(myReports, 5);
 
   const handleDownload = (r: any) => {
     toast({ title: "Report Generating...", description: `Downloading ${r.name}` });
@@ -55,11 +67,11 @@ export default function Reports() {
             </tr>
           </thead>
           <tbody>
-            {myReports.length === 0 ? (
+            {paginatedItems.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center py-6 text-muted-foreground">No custom reports saved yet. Browse to any Module to save a view.</td>
               </tr>
-            ) : myReports.map(r => (
+            ) : paginatedItems.map(r => (
               <tr key={r.id}>
                 <td className="font-medium">
                   {r.name}
@@ -115,6 +127,15 @@ export default function Reports() {
             ))}
           </tbody>
         </table>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
 
       <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>

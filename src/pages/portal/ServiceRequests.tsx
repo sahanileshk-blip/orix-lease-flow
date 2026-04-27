@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 type RequestType = "Service" | "Foreclosure" | "Replacement" | "Accident" | "Query";
 
@@ -46,6 +47,17 @@ export default function ServiceRequests() {
     (typeFilter === "all" || r.type === typeFilter) &&
     (statusFilter === "all" || r.status === statusFilter)
   );
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
 
   const handleSubmit = () => {
     if (!selectedType || !subject) return;
@@ -101,10 +113,10 @@ export default function ServiceRequests() {
         </div>
 
         <div className="divide-y">
-          {filtered.length === 0 && (
+          {paginatedItems.length === 0 && (
             <div className="text-center py-12 text-muted-foreground text-sm">No requests found.</div>
           )}
-          {filtered.map(req => (
+          {paginatedItems.map(req => (
             <div key={req.id}>
               <div
                 className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors cursor-pointer"
@@ -149,6 +161,15 @@ export default function ServiceRequests() {
             </div>
           ))}
         </div>
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
 
       {/* New Request Dialog */}

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Car, Search, Download, Save } from "lucide-react";
 import { SaveReportModal } from "@/components/SaveReportModal";
 import { useFilter } from "@/contexts/FilterContext";
+import { TablePagination, usePagination } from "@/components/TablePagination";
 
 function downloadCSV(data: any[], filename: string) {
   const headers = ['Asset ID', 'Category', 'Registration No', 'Vehicle', 'Client', 'Assigned To', 'Lease Status', 'Location', 'Cost Center', 'Insurance Expiry', 'Lease End'];
@@ -36,6 +37,17 @@ const VehicleFleet = () => {
     if (search && !a.description.toLowerCase().includes(search.toLowerCase()) && !a.assetTag.toLowerCase().includes(search.toLowerCase()) && !a.registrationNo?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const {
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedItems,
+    totalItems,
+    startIndex,
+    endIndex,
+  } = usePagination(filtered, 5);
 
   return (
     <AppLayout>
@@ -139,7 +151,7 @@ const VehicleFleet = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((a) => (
+            {paginatedItems.map((a) => (
               <tr key={a.id}>
                 <td className="font-medium">{a.assetTag}</td>
                 <td>{a.category || 'Passenger Car'}</td>
@@ -163,6 +175,15 @@ const VehicleFleet = () => {
         {filtered.length === 0 && (
           <p className="text-center py-8 text-muted-foreground text-sm">No vehicles found</p>
         )}
+        <TablePagination
+          totalItems={totalItems}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
       <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Vehicle Fleet" activeFilters={{ search, category: categoryFilter.join(','), client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
     </AppLayout>
