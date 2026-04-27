@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus, Star, Download, SmilePlus, Save } from "lucide-react";
+import { Search, Plus, Star, Download, SmilePlus, Save, Settings2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFilter } from "@/contexts/FilterContext";
 import { SaveReportModal } from "@/components/SaveReportModal";
 import { TablePagination, usePagination } from "@/components/TablePagination";
+import { useServiceRequest } from "@/contexts/ServiceRequestContext";
+import { useNavigate } from "react-router-dom";
 
 function downloadCSV(data: any[], filename: string) {
   const headers = ['Ticket No', 'Category', 'Subject', 'Client', 'Priority', 'Status', 'Created', 'SLA Deadline', 'Assigned To', 'Cost Center', 'Location', 'Rating', 'CSAT'];
@@ -30,24 +32,9 @@ function downloadCSV(data: any[], filename: string) {
   URL.revokeObjectURL(url);
 }
 
-const TICKET_CATEGORIES: Record<string, string[]> = {
-  "Vehicle": [
-    "Service / Maintenance",
-    "Accident Reporting",
-    "Replacement Request",
-    "General Vehicle Query"
-  ],
-  "IT Equipment": [
-    "Hardware Issue",
-    "Software Issue",
-    "Replacement Request",
-    "Upgrade Request",
-    "General IT Query"
-  ]
-};
-
 const Tickets = () => {
   const { tickets } = useAppData();
+  const { categories, requestTypes } = useServiceRequest();
   const { clientFilter, costCenterFilter, locationFilter } = useFilter();
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
@@ -65,7 +52,10 @@ const Tickets = () => {
   const [, setRefresh] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isIndividual = !!user?.isIndividual;
+  const isSuperAdmin = user?.role === "IT Admin (ORIX)";
+
   const filtered = tickets.filter((t) => {
     // Individual users only see their own asset's tickets
     if (isIndividual) {
@@ -144,6 +134,11 @@ const Tickets = () => {
           <p className="page-description">Create and track service tickets with SLA tracking</p>
         </div>
         <div className="flex gap-2">
+          {isSuperAdmin && (
+            <Button variant="outline" className="gap-1.5" onClick={() => navigate("/service-config")}>
+              <Settings2 className="h-4 w-4" /> Configure Service Requests
+            </Button>
+          )}
           {!isIndividual && (
             <>
               <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
@@ -173,8 +168,9 @@ const Tickets = () => {
                       }}>
                         <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Vehicle">Vehicle</SelectItem>
-                          {!isIndividual && <SelectItem value="IT Equipment">IT Equipment</SelectItem>}
+                          {categories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -187,8 +183,8 @@ const Tickets = () => {
                       >
                         <SelectTrigger><SelectValue placeholder={ticketCategory ? "Select Type" : "Select Category first"} /></SelectTrigger>
                         <SelectContent>
-                          {ticketCategory && TICKET_CATEGORIES[ticketCategory]?.map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          {ticketCategory && requestTypes.filter(t => t.categoryId === ticketCategory).map(type => (
+                            <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -235,7 +231,6 @@ const Tickets = () => {
           )}
         </div>
       </div>
-
       {/* CSAT KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="kpi-card">

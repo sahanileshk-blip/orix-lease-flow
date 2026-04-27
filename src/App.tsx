@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { ReportProvider } from "@/contexts/ReportContext";
 import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
+import { ServiceRequestProvider } from "@/contexts/ServiceRequestContext";
 
 // ERP pages
 import Dashboard from "./pages/Dashboard";
@@ -29,6 +30,7 @@ import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 import LeaseDetail from "./pages/LeaseDetail";
 import LoginConfig from "./pages/LoginConfig";
+import ServiceRequestConfig from "./pages/ServiceRequestConfig";
 
 // Customer portal pages
 import PortalWelcome from "./pages/portal/PortalWelcome";
@@ -56,10 +58,17 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== "IT Admin (ORIX)") return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 function PortalRoute({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!user?.isPortalUser) return <Navigate to="/" replace />;
+  if (!user?.isPortalUser && !user?.isIndividual) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -107,6 +116,7 @@ function AppRoutes() {
       <Route path="/users"      element={<AdminRoute><UserManagement /></AdminRoute>} />
       <Route path="/audit-log"  element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
       <Route path="/login-config" element={<AdminRoute><LoginConfig /></AdminRoute>} />
+      <Route path="/service-config" element={<SuperAdminRoute><ServiceRequestConfig /></SuperAdminRoute>} />
       <Route path="/assets"     element={<Navigate to="/vehicles" replace />} />
 
       {/* Customer Portal Routes */}
@@ -129,21 +139,23 @@ function AppRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <ThemeProvider>
-        <FilterProvider>
-          <ReportProvider>
-            <PersonalizationProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <AppRoutes />
-                </BrowserRouter>
-              </TooltipProvider>
-            </PersonalizationProvider>
-          </ReportProvider>
-        </FilterProvider>
-      </ThemeProvider>
+      <ServiceRequestProvider>
+        <ThemeProvider>
+          <FilterProvider>
+            <ReportProvider>
+              <PersonalizationProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <AppRoutes />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </PersonalizationProvider>
+            </ReportProvider>
+          </FilterProvider>
+        </ThemeProvider>
+      </ServiceRequestProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

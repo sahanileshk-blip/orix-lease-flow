@@ -39,7 +39,7 @@ const adminItems = [
 const individualItems = [
   { title: "Dashboard",        url: "/",              icon: LayoutDashboard },
   { title: "Request Quotation", url: "/quotes",       icon: Calculator      },
-  { title: "Service Requests", url: "/tickets",       icon: TicketPlus      },
+  { title: "Service Requests", url: "/portal/service-requests", icon: TicketPlus      },
   { title: "Notifications",   url: "/notifications", icon: Bell            },
   { title: "Profile",          url: "/profile",       icon: User            },
   { title: "FAQ",              url: "/faq",           icon: HelpCircle      },
