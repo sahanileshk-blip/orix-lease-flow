@@ -37,8 +37,8 @@ function downloadCSV(data: any[], filename: string) {
 }
 
 const Invoices = () => {
-  const { invoices } = useAppData();
-  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
+  const { invoices, clients, locations, costCenters } = useAppData();
+  const { clientFilter, setClientFilter, costCenterFilter, setCostCenterFilter, locationFilter, setLocationFilter } = useFilter();
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -55,6 +55,9 @@ const Invoices = () => {
 
   const filtered = invoices.filter((inv) => {
     if (statusFilter.length > 0 && !statusFilter.includes(inv.status)) return false;
+    if (clientFilter.length > 0 && !clientFilter.includes(inv.clientId)) return false;
+    if (locationFilter.length > 0 && !locationFilter.includes(inv.location)) return false;
+    if (costCenterFilter.length > 0 && !costCenterFilter.includes(inv.costCenter)) return false;
     if (search && !inv.invoiceNo.toLowerCase().includes(search.toLowerCase()) && !inv.clientName.toLowerCase().includes(search.toLowerCase())) return false;
     if (dateRange.start && inv.dueDate < dateRange.start) return false;
     if (dateRange.end && inv.dueDate > dateRange.end) return false;
@@ -123,6 +126,17 @@ const Invoices = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search invoices..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
+        {user?.isAdmin && (
+          <MultiSelect
+            placeholder="All Clients"
+            className="w-[160px]"
+            selected={clientFilter}
+            onChange={setClientFilter}
+            options={clients.map(c => ({ label: c.name, value: c.id }))}
+          />
+        )}
+        <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
+        <MultiSelect placeholder="Cost Center" className="w-[140px]" selected={costCenterFilter} onChange={setCostCenterFilter} options={costCenters.map(cc => ({ label: cc, value: cc }))} />
         <MultiSelect
           placeholder="Status"
           className="w-[160px]"

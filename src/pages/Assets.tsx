@@ -25,8 +25,8 @@ function downloadCSV(data: any[], filename: string) {
 }
 
 const Assets = () => {
-  const { assets } = useAppData();
-  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
+  const { assets, clients, locations, costCenters } = useAppData();
+  const { clientFilter, setClientFilter, costCenterFilter, setCostCenterFilter, locationFilter, setLocationFilter } = useFilter();
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
@@ -36,6 +36,9 @@ const Assets = () => {
   const filtered = assets.filter((a) => {
     if (typeFilter.length > 0 && !typeFilter.includes(a.type)) return false;
     if (statusFilter.length > 0 && !statusFilter.includes(a.status)) return false;
+    if (clientFilter.length > 0 && !clientFilter.includes(a.clientId || '')) return false;
+    if (locationFilter.length > 0 && !locationFilter.includes(a.location || '')) return false;
+    if (costCenterFilter.length > 0 && !costCenterFilter.includes(a.costCenter || '')) return false;
     if (search && !a.description.toLowerCase().includes(search.toLowerCase()) && !a.assetTag.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -45,7 +48,7 @@ const Assets = () => {
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="page-title">Asset Management</h1>
-          <p className="page-description">Manage vehicles and IT assets across all clients</p>
+          <p className="page-description">Manage vehicles and Equipment across all clients</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
@@ -73,8 +76,8 @@ const Assets = () => {
             <Monitor className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">IT Equipment</p>
-            <p className="text-xl font-bold font-heading">{assets.filter(a => a.type === 'IT Equipment').length}</p>
+            <p className="text-xs text-muted-foreground">Equipment</p>
+            <p className="text-xl font-bold font-heading">{assets.filter(a => a.type === 'Equipment').length}</p>
           </div>
         </div>
         <div className="kpi-card flex items-center gap-3">
@@ -106,9 +109,20 @@ const Assets = () => {
           onChange={setTypeFilter}
           options={[
             { label: "Vehicle", value: "Vehicle" },
-            { label: "IT Equipment", value: "IT Equipment" },
+            { label: "Equipment", value: "Equipment" },
           ]}
         />
+        {user?.isAdmin && (
+          <MultiSelect
+            placeholder="All Clients"
+            className="w-[160px]"
+            selected={clientFilter}
+            onChange={setClientFilter}
+            options={clients.map(c => ({ label: c.name, value: c.id }))}
+          />
+        )}
+        <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
+        <MultiSelect placeholder="Cost Center" className="w-[140px]" selected={costCenterFilter} onChange={setCostCenterFilter} options={costCenters.map(cc => ({ label: cc, value: cc }))} />
         <MultiSelect
           placeholder="Status"
           className="w-[175px]"

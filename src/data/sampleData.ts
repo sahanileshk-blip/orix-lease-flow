@@ -8,7 +8,7 @@ export interface Asset {
   id: string;
   clientId: string;
   clientName: string;
-  type: 'Vehicle' | 'IT Equipment';
+  type: 'Vehicle' | 'Equipment';
   assetTag: string;
   description: string;
   status: 'Active' | 'Under Maintenance' | 'Disposed' | 'In Transit';
@@ -23,7 +23,7 @@ export interface Asset {
   model?: string;
   driver?: string;
   insuranceExpiry?: string;
-  // IT-specific
+  // Equipment-specific
   serialNo?: string;
   category?: string;
   condition?: string;
@@ -35,7 +35,7 @@ export interface Contract {
   clientId: string;
   clientName: string;
   contractNo: string;
-  assetType: 'Vehicle' | 'IT Equipment';
+  assetType: 'Vehicle' | 'Equipment';
   leaseType: 'OL' | 'FL';
   startDate: string;
   endDate: string;
@@ -70,7 +70,7 @@ export interface Ticket {
   clientId: string;
   clientName: string;
   ticketNo: string;
-  category: 'Vehicle' | 'IT Equipment' | 'Lease';
+  category: 'Vehicle' | 'Equipment' | 'Lease';
   subject: string;
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
@@ -130,7 +130,7 @@ export const clients: Client[] = [
 const baseAssets: Asset[] = [
   // Core items preserved for explicit search / notification references
   { id: 'a1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', type: 'Vehicle', assetTag: 'VH-001', category: 'Passenger Car', description: 'Toyota Innova Crysta', status: 'Active', location: 'Mumbai', costCenter: 'CC-MUM-001', assignedTo: 'Rajesh Kumar', leaseStartDate: '2024-01-15', leaseEndDate: '2027-01-14', registrationNo: 'MH-02-AB-1234', make: 'Toyota', model: 'Innova Crysta', driver: 'Suresh Patil', insuranceExpiry: '2025-06-30', leaseStatus: 'Disbursed' },
-  { id: 'a10', clientId: 'c1', clientName: 'Qualtech Edge Ltd', type: 'IT Equipment', assetTag: 'IT-005', description: 'Dell Optiplex 7090 MFF', status: 'Active', location: 'Mumbai', costCenter: 'CC-MUM-001', assignedTo: 'Sunita Rao', leaseStartDate: '2023-11-01', leaseEndDate: '2026-10-31', serialNo: 'DL7090-48492', category: 'Desktop', condition: 'Good', leaseStatus: 'Disbursed' },
+  { id: 'a10', clientId: 'c1', clientName: 'Qualtech Edge Ltd', type: 'Equipment', assetTag: 'EQ-005', description: 'Dell Optiplex 7090 MFF', status: 'Active', location: 'Mumbai', costCenter: 'CC-MUM-001', assignedTo: 'Sunita Rao', leaseStartDate: '2023-11-01', leaseEndDate: '2026-10-31', serialNo: 'DL7090-48492', category: 'Desktop', condition: 'Good', leaseStatus: 'Disbursed' },
 ];
 
 const now = new Date();
@@ -141,19 +141,19 @@ const d75 = new Date(now.getTime() + 75 * 86400000).toISOString().split('T')[0];
 const baseContracts: Contract[] = [
   { id: 'ct1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-001', assetType: 'Vehicle', leaseType: 'OL', startDate: '2024-01-15', endDate: '2027-01-14', tenure: 36, monthlyRental: 45000, totalValue: 1620000, status: 'Disbursed', assetsCount: 2, costCenter: 'CC-MUM-001', location: 'Mumbai' },
   { id: 'ct-dyn1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D1', assetType: 'Vehicle', leaseType: 'OL', startDate: '2021-01-15', endDate: d15, tenure: 36, monthlyRental: 20000, totalValue: 720000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
-  { id: 'ct-dyn2', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D2', assetType: 'IT Equipment', leaseType: 'OL', startDate: '2021-01-15', endDate: d45, tenure: 36, monthlyRental: 15000, totalValue: 540000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-dyn2', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D2', assetType: 'Equipment', leaseType: 'OL', startDate: '2021-01-15', endDate: d45, tenure: 36, monthlyRental: 15000, totalValue: 540000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
   { id: 'ct-dyn3', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D3', assetType: 'Vehicle', leaseType: 'OL', startDate: '2021-01-15', endDate: d75, tenure: 36, monthlyRental: 30000, totalValue: 1080000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
   { id: 'ct-dyn4', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D4', assetType: 'Vehicle', leaseType: 'OL', startDate: '2021-01-15', endDate: d15, tenure: 36, monthlyRental: 22000, totalValue: 792000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
-  { id: 'ct-dyn5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D5', assetType: 'IT Equipment', leaseType: 'OL', startDate: '2021-01-15', endDate: d45, tenure: 36, monthlyRental: 12000, totalValue: 432000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-dyn5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2024-D5', assetType: 'Equipment', leaseType: 'OL', startDate: '2021-01-15', endDate: d45, tenure: 36, monthlyRental: 12000, totalValue: 432000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
   // April 2026 Disbursements
   { id: 'ct-apr1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2026-A1', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-01', endDate: '2029-03-31', tenure: 36, monthlyRental: 48000, totalValue: 1728000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
   { id: 'ct-apr2', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2026-A2', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-05', endDate: '2029-04-04', tenure: 36, monthlyRental: 52000, totalValue: 1872000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-DEL-002', location: 'Delhi' },
-  { id: 'ct-apr3', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'FL-2026-A3', assetType: 'IT Equipment', leaseType: 'FL', startDate: '2026-04-08', endDate: '2029-04-07', tenure: 36, monthlyRental: 15000, totalValue: 540000, status: 'Disbursed', assetsCount: 10, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-apr3', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'FL-2026-A3', assetType: 'Equipment', leaseType: 'FL', startDate: '2026-04-08', endDate: '2029-04-07', tenure: 36, monthlyRental: 15000, totalValue: 540000, status: 'Disbursed', assetsCount: 10, costCenter: 'CC-MUM-001', location: 'Mumbai' },
   { id: 'ct-apr4', clientId: 'c2', clientName: 'Reliance Industries', contractNo: 'OL-2026-A4', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-10', endDate: '2029-04-09', tenure: 36, monthlyRental: 35000, totalValue: 1260000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-BLR-003', location: 'Bangalore' },
   { id: 'ct-apr5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2026-A5', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-12', endDate: '2029-04-11', tenure: 36, monthlyRental: 42000, totalValue: 1512000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-MUM-001', location: 'Mumbai' },
-  { id: 'ct-apr6', clientId: 'c2', clientName: 'Reliance Industries', contractNo: 'FL-2026-A6', assetType: 'IT Equipment', leaseType: 'FL', startDate: '2026-04-15', endDate: '2029-04-14', tenure: 36, monthlyRental: 5500, totalValue: 198000, status: 'Disbursed', assetsCount: 5, costCenter: 'CC-BLR-003', location: 'Bangalore' },
+  { id: 'ct-apr6', clientId: 'c2', clientName: 'Reliance Industries', contractNo: 'FL-2026-A6', assetType: 'Equipment', leaseType: 'FL', startDate: '2026-04-15', endDate: '2029-04-14', tenure: 36, monthlyRental: 5500, totalValue: 198000, status: 'Disbursed', assetsCount: 5, costCenter: 'CC-BLR-003', location: 'Bangalore' },
   { id: 'ct-apr7', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'OL-2026-A7', assetType: 'Vehicle', leaseType: 'OL', startDate: '2026-04-18', endDate: '2029-04-17', tenure: 36, monthlyRental: 60000, totalValue: 2160000, status: 'Disbursed', assetsCount: 1, costCenter: 'CC-DEL-002', location: 'Delhi' },
-  { id: 'ct-apr8', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'FL-2026-A8', assetType: 'IT Equipment', leaseType: 'FL', startDate: '2026-04-20', endDate: '2029-04-19', tenure: 36, monthlyRental: 8000, totalValue: 288000, status: 'Disbursed', assetsCount: 2, costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 'ct-apr8', clientId: 'c1', clientName: 'Qualtech Edge Ltd', contractNo: 'FL-2026-A8', assetType: 'Equipment', leaseType: 'FL', startDate: '2026-04-20', endDate: '2029-04-19', tenure: 36, monthlyRental: 8000, totalValue: 288000, status: 'Disbursed', assetsCount: 2, costCenter: 'CC-MUM-001', location: 'Mumbai' },
 ];
 
 const baseInvoices: Invoice[] = [
@@ -166,7 +166,7 @@ const generateAssets = (count: number): Asset[] => {
   const result: Asset[] = [];
   const roles = ['Software Engineer', 'Manager', 'Direct Sales', 'Director', 'HR Exec', 'Tech Lead', 'Support Staff'];
   const vehicleMakes = ['Toyota', 'Honda', 'Tata', 'Mahindra', 'Hyundai', 'TVS', 'Bajaj', 'Royal Enfield'];
-  const categories = ['Passenger Car', 'Commercial Vehicle', 'Two Wheeler - Bike', 'Two Wheeler - Scooty'];
+  const categories = ['Passenger Car', 'Commercial Vehicle', 'EPP', 'EPP'];
   const statuses = ['Active', 'Under Maintenance', 'In Transit', 'Disposed'];
   const leaseStatuses = ['Disbursed', 'Foreclosed'];
 
@@ -178,7 +178,7 @@ const generateAssets = (count: number): Asset[] => {
 
     if (isVehicle) {
       const vCat = categories[i % categories.length];
-      const model = vCat.includes('Bike') ? 'Motorcycle' : (vCat.includes('Scooty') ? 'Activa' : 'Sedan');
+      const model = vCat === 'EPP' ? 'EV' : 'Sedan';
       result.push({
         id: `gen-a-${i}`, clientId: cl.id, clientName: cl.name, type: 'Vehicle',
         assetTag: `VH-GEN-${1000 + i}`, description: `${vehicleMakes[i % 8]} ${model}`,
@@ -191,8 +191,8 @@ const generateAssets = (count: number): Asset[] => {
     } else {
       const isLaptop = i % 3 === 0;
       result.push({
-        id: `gen-a-${i}`, clientId: cl.id, clientName: cl.name, type: 'IT Equipment',
-        assetTag: `IT-GEN-${1000 + i}`, description: isLaptop ? 'Dell Latitude 5540' : 'Dell Optiplex',
+        id: `gen-a-${i}`, clientId: cl.id, clientName: cl.name, type: 'Equipment',
+        assetTag: `EQ-GEN-${1000 + i}`, description: isLaptop ? 'Dell Latitude 5540' : 'Dell Optiplex',
         category: isLaptop ? 'Laptop' : 'Desktop', status: statuses[i % 4] as any, location: loc, costCenter: cc,
         assignedTo: roles[i % roles.length], leaseStartDate: '2024-01-01', 
         leaseEndDate: new Date(new Date('2024-01-01').setMonth(new Date('2024-01-01').getMonth() + 36)).toISOString().split('T')[0],
@@ -214,7 +214,7 @@ const generateContracts = (count: number): Contract[] => {
     const startDate = (i === 0) ? '2024-08-16' : `${year}-01-01`;
     result.push({
       id: `gen-ct-${i}`, clientId: cl.id, clientName: cl.name, contractNo: `${leaseType}-${year}-${String(100 + i).padStart(3, '0')}`,
-      assetType: i % 2 === 0 ? 'Vehicle' : 'IT Equipment', leaseType, startDate, 
+      assetType: i % 2 === 0 ? 'Vehicle' : 'Equipment', leaseType, startDate, 
       endDate: new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + 36)).toISOString().split('T')[0],
       tenure: 36, monthlyRental: 25000 + (i * 1000), totalValue: (25000 + (i * 1000)) * 36,
       status: statuses[i % 2] as any, assetsCount: 2 + (i % 5), costCenter: costCenters[i % costCenters.length],
@@ -252,9 +252,9 @@ export const invoices = [...baseInvoices, ...generateInvoices(120)];
 export const tickets: Ticket[] = [
   { id: 't1', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-001', category: 'Vehicle', subject: 'Flat tyre replacement - VH-001', priority: 'High', status: 'Open', createdAt: '2026-04-10', slaDeadline: '2026-04-12', assignedTo: 'ORIX Service Desk', costCenter: 'CC-MUM-001', location: 'Mumbai', externalLink: 'https://orix-internal.service-now.com/sr/SR-2026-001' },
   { id: 't5', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-005', category: 'Vehicle', subject: 'Scheduled service due - VH-002', priority: 'Medium', status: 'Closed', createdAt: '2026-04-05', slaDeadline: '2026-04-10', assignedTo: 'ORIX Service Desk', costCenter: 'CC-DEL-002', location: 'Delhi', rating: 5, csatScore: 95 },
-  { id: 't7', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-010', category: 'IT Equipment', subject: 'Laptop battery replacement - IT-005', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-12', slaDeadline: '2026-04-15', assignedTo: 'Hardware Ops', costCenter: 'CC-MUM-001', location: 'Mumbai' },
+  { id: 't7', clientId: 'c1', clientName: 'Qualtech Edge Ltd', ticketNo: 'SR-2026-010', category: 'Equipment', subject: 'Laptop battery replacement - EQ-005', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-12', slaDeadline: '2026-04-15', assignedTo: 'Hardware Ops', costCenter: 'CC-MUM-001', location: 'Mumbai' },
 
-  { id: 't2', clientId: 'c2', clientName: 'Reliance Industries', ticketNo: 'SR-2026-002', category: 'IT', subject: 'Laptop screen flickering - IT-001', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-08', slaDeadline: '2026-04-13', assignedTo: 'Tech Support', costCenter: 'CC-BLR-003', location: 'Bangalore' },
+  { id: 't2', clientId: 'c2', clientName: 'Reliance Industries', ticketNo: 'SR-2026-002', category: 'Equipment', subject: 'Laptop screen flickering - EQ-001', priority: 'Medium', status: 'In Progress', createdAt: '2026-04-08', slaDeadline: '2026-04-13', assignedTo: 'Tech Support', costCenter: 'CC-BLR-003', location: 'Bangalore' },
   { id: 't8', clientId: 'c2', clientName: 'Reliance Industries', ticketNo: 'SR-2026-011', category: 'Lease', subject: 'Inquiry on bulk asset return', priority: 'Low', status: 'Open', createdAt: '2026-04-14', slaDeadline: '2026-04-20', assignedTo: 'Account Mgmt', costCenter: 'CC-BLR-003', location: 'Bangalore' },
 ];
 
@@ -283,7 +283,7 @@ export const dashboardKPIs = {
   pendingTickets: 0,
   overdueInvoices: 0,
   overdueAmount: 0,
-  assetsByType: { Vehicle: 0, 'IT Equipment': 0 },
+  assetsByType: { Vehicle: 0, 'Equipment': 0 },
   assetsByStatus: { Active: 0, 'Under Maintenance': 0, 'In Transit': 0 },
 };
 

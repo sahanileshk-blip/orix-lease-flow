@@ -67,7 +67,7 @@ export function useAppData() {
     activeLeaseValue: fContracts.filter(c => c.status === 'Disbursed').reduce((sum, c) => sum + c.totalValue, 0),
     assetsByType: {
       Vehicle: fAssets.filter(a => a.type === 'Vehicle').length,
-      'IT Equipment': fAssets.filter(a => a.type === 'IT Equipment').length,
+      'Equipment': fAssets.filter(a => a.type === 'Equipment').length,
     },
     assetsByStatus: {
       Active: fAssets.filter(a => a.status === 'Active').length,
@@ -86,6 +86,7 @@ export function useAppData() {
     notifications, // kept global
     dashboardKPIs: dynamicKPIs,
     locations,
+    costCenters,
     clients: clients.filter(c => allowedClients.includes(c.id)),
     faqItems,
     auditLogs

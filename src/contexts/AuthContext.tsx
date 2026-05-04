@@ -59,7 +59,7 @@ export const itManagerUser: AppUser = {
   isAdmin: false,
   accessLevel: "all",
   lastLogin: new Date(Date.now() - 3600000 * 5).toISOString(),
-  lastActivity: "Added 3 IT Assets",
+  lastActivity: "Added 3 Equipment",
 };
 
 export const vehicleManagerUser: AppUser = {

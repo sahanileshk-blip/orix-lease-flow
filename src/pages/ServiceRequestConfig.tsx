@@ -23,6 +23,7 @@ const ServiceRequestConfig = () => {
   const [typeName, setTypeName] = useState("");
   const [typeCatId, setTypeCatId] = useState("");
   const [checklist, setChecklist] = useState<DocumentChecklistItem[]>([]);
+  const [typeSLA, setTypeSLA] = useState<string>("3");
   const [newDocName, setNewDocName] = useState("");
   const [newDocMandatory, setNewDocMandatory] = useState(false);
 
@@ -45,10 +46,10 @@ const ServiceRequestConfig = () => {
     e.preventDefault();
     if (!typeName.trim() || !typeCatId) return;
     if (editingType) {
-      updateRequestType(editingType.id, typeName, checklist);
+      updateRequestType(editingType.id, typeName, checklist, parseInt(typeSLA) || 3);
       toast({ title: "Request Type Updated", description: `Request type "${typeName}" has been updated.` });
     } else {
-      addRequestType(typeCatId, typeName, checklist);
+      addRequestType(typeCatId, typeName, checklist, parseInt(typeSLA) || 3);
       toast({ title: "Request Type Created", description: `New request type "${typeName}" has been added.` });
     }
     setTypeDialogOpen(false);
@@ -60,6 +61,7 @@ const ServiceRequestConfig = () => {
     setTypeName("");
     setTypeCatId("");
     setChecklist([]);
+    setTypeSLA("3");
   };
 
   const addDocToChecklist = () => {
@@ -106,7 +108,7 @@ const ServiceRequestConfig = () => {
                     <Label htmlFor="catName">Category Name</Label>
                     <Input 
                       id="catName" 
-                      placeholder="e.g. Vehicle, IT, Finance" 
+                      placeholder="e.g. Vehicle, Equipment, Finance" 
                       value={catName} 
                       onChange={e => setCatName(e.target.value)} 
                       required 
@@ -177,6 +179,20 @@ const ServiceRequestConfig = () => {
                         placeholder="e.g. Accident Reporting, Upgrade Request" 
                         value={typeName} 
                         onChange={e => setTypeName(e.target.value)} 
+                        required 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>SLA (in days)</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="e.g. 3" 
+                        value={typeSLA} 
+                        onChange={e => setTypeSLA(e.target.value)} 
+                        min="1"
                         required 
                       />
                     </div>
@@ -257,12 +273,15 @@ const ServiceRequestConfig = () => {
                     <div key={type.id} className="p-4 bg-card border rounded-xl hover:border-primary/30 transition-colors group">
                       <div className="flex items-start justify-between mb-3">
                         <h4 className="font-semibold text-sm">{type.name}</h4>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] px-1.5 py-0.5 bg-sky-100 text-sky-600 rounded font-bold uppercase">SLA: {type.slaInDays || 3}d</span>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                             setEditingType(type);
                             setTypeName(type.name);
                             setTypeCatId(type.categoryId);
-                            setChecklist(type.documentChecklist);
+                            setChecklist(type.documentChecklist || []);
+                            setTypeSLA((type.slaInDays || 3).toString());
                             setTypeDialogOpen(true);
                           }}>
                             <Edit2 className="h-3 w-3" />
@@ -273,16 +292,17 @@ const ServiceRequestConfig = () => {
                           }}>
                             <Trash2 className="h-3 w-3" />
                           </Button>
+                          </div>
                         </div>
                       </div>
                       <div className="space-y-1.5">
                         <p className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1 mb-1">
                           <FileText className="h-3 w-3" /> Checklist
                         </p>
-                        {type.documentChecklist.length === 0 ? (
+                        {(type.documentChecklist || []).length === 0 ? (
                           <p className="text-xs text-muted-foreground italic">No documents</p>
                         ) : (
-                          type.documentChecklist.map(doc => (
+                          (type.documentChecklist || []).map(doc => (
                             <div key={doc.id} className="flex items-center gap-2 text-xs">
                               {doc.isMandatory ? <Check className="h-3 w-3 text-rose-500" /> : <ArrowRight className="h-3 w-3 text-slate-400" />}
                               <span className={doc.isMandatory ? "text-foreground font-medium" : "text-muted-foreground"}>{doc.name}</span>

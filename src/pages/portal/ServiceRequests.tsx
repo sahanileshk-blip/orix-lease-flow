@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { CheckCircle2, Clock, X, Plus, Filter, ChevronDown, ChevronUp, FileText, Upload, AlertCircle, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,16 +12,16 @@ import { useServiceRequest } from "@/contexts/ServiceRequestContext";
 import { useToast } from "@/hooks/use-toast";
 
 const statusColor: Record<string, string> = {
-  Raised:     "bg-sky-50 text-sky-600 dark:bg-sky-900/20",
+  Raised: "bg-sky-50 text-sky-600 dark:bg-sky-900/20",
   "In Progress": "bg-amber-50 text-amber-600 dark:bg-amber-900/20",
-  Resolved:   "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20",
-  Closed:     "bg-muted text-muted-foreground",
+  Resolved: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20",
+  Closed: "bg-muted text-muted-foreground",
 };
 
 const mockRequests = [
-  { id: "SR-4521", type: "Service",     subject: "Annual maintenance for MH-01-AB-1234", status: "In Progress", date: "10 Apr 2026", vehicle: "Honda City - MH-01-AB-1234" },
-  { id: "SR-4398", type: "Query",       subject: "Clarification on April rental invoice", status: "Resolved",    date: "02 Apr 2026", vehicle: "—" },
-  { id: "SR-4201", type: "Accident",    subject: "Minor accident — rear bumper damage",    status: "Closed",      date: "15 Mar 2026", vehicle: "Maruti Swift - MH-01-CD-5678" },
+  { id: "SR-4521", type: "Service", subject: "Annual maintenance for MH-01-AB-1234", status: "In Progress", date: "10 Apr 2026", vehicle: "Honda City - MH-01-AB-1234" },
+  { id: "SR-4398", type: "Query", subject: "Clarification on April rental invoice", status: "Resolved", date: "02 Apr 2026", vehicle: "—" },
+  { id: "SR-4201", type: "Accident", subject: "Minor accident — rear bumper damage", status: "Closed", date: "15 Mar 2026", vehicle: "Maruti Swift - MH-01-CD-5678" },
 ];
 
 function fmtDate(d: string) { return d; }
@@ -30,22 +30,35 @@ export default function ServiceRequests() {
   const { user } = useAuth();
   const { categories, requestTypes } = useServiceRequest();
   const { toast } = useToast();
-  
+
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [newOpen, setNewOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  
+
   // Form State
   const [selectedCatId, setSelectedCatId] = useState<string>("");
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [subject, setSubject] = useState("");
   const [desc, setDesc] = useState("");
+  const [ticketDate, setTicketDate] = useState("");
+
+  useEffect(() => {
+    if (selectedTypeId) {
+      const type = requestTypes.find(t => t.id === selectedTypeId);
+      if (type) {
+        const d = new Date();
+        d.setDate(d.getDate() + (type.slaInDays || 3));
+        setTicketDate(d.toISOString().split('T')[0]);
+      }
+    }
+  }, [selectedTypeId, requestTypes]);
+
   const [uploadedDocs, setUploadedDocs] = useState<Record<string, File | null>>({});
 
-  const currentType = useMemo(() => 
+  const currentType = useMemo(() =>
     requestTypes.find(t => t.id === selectedTypeId),
-  [selectedTypeId, requestTypes]);
+    [selectedTypeId, requestTypes]);
 
   const filtered = mockRequests.filter(r =>
     (typeFilter === "all" || r.id === typeFilter) &&
@@ -70,9 +83,9 @@ export default function ServiceRequests() {
   const isSubmitDisabled = useMemo(() => {
     if (!selectedTypeId || !subject) return true;
     if (!currentType) return false;
-    
+
     // Check if all mandatory documents are uploaded
-    const mandatoryDocs = currentType.documentChecklist.filter(d => d.isMandatory);
+    const mandatoryDocs = (currentType.documentChecklist || []).filter(d => d.isMandatory);
     return mandatoryDocs.some(d => !uploadedDocs[d.id]);
   }, [selectedTypeId, subject, currentType, uploadedDocs]);
 
@@ -158,10 +171,10 @@ export default function ServiceRequests() {
                   <div className="border rounded-lg p-4 text-xs space-y-2">
                     <p className="font-semibold text-sm">Request Timeline</p>
                     {[
-                      { step: "Raised",      date: req.date,                done: true  },
-                      { step: "In Review",   date: "12 Apr 2026",           done: req.status !== "Raised" },
-                      { step: "In Progress", date: "13 Apr 2026",           done: req.status === "In Progress" || req.status === "Resolved" || req.status === "Closed" },
-                      { step: "Resolved",    date: req.status === "Closed" || req.status === "Resolved" ? "14 Apr 2026" : "—", done: req.status === "Resolved" || req.status === "Closed" },
+                      { step: "Raised", date: req.date, done: true },
+                      { step: "In Review", date: "12 Apr 2026", done: req.status !== "Raised" },
+                      { step: "In Progress", date: "13 Apr 2026", done: req.status === "In Progress" || req.status === "Resolved" || req.status === "Closed" },
+                      { step: "Resolved", date: req.status === "Closed" || req.status === "Resolved" ? "14 Apr 2026" : "—", done: req.status === "Resolved" || req.status === "Closed" },
                     ].map((s, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${s.done ? "bg-emerald-500" : "bg-muted border border-border"}`}>
@@ -238,6 +251,18 @@ export default function ServiceRequests() {
             </div>
 
             <div className="space-y-1.5">
+              <Label className="text-xs">Required Date</Label>
+              <Input
+                type="date"
+                value={ticketDate}
+                onChange={e => setTicketDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="h-9"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
               <Label htmlFor="req-subject" className="text-xs">Subject</Label>
               <Input id="req-subject" placeholder="Brief description of your request" value={subject} onChange={e => setSubject(e.target.value)} className="h-9" />
             </div>
@@ -254,9 +279,9 @@ export default function ServiceRequests() {
                     Supported: PDF, JPG, PNG (Max 5MB)
                   </span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 gap-3">
-                  {currentType.documentChecklist.map(doc => (
+                  {(currentType.documentChecklist || []).map(doc => (
                     <div key={doc.id} className="flex flex-col gap-2 p-3 bg-background rounded-lg border shadow-sm group hover:border-primary/30 transition-all">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs font-medium flex items-center gap-1.5">
@@ -275,12 +300,12 @@ export default function ServiceRequests() {
                           <div className="text-slate-400 text-[10px] font-bold uppercase">Optional</div>
                         )}
                       </div>
-                      
+
                       <div className="flex items-center gap-3">
                         <div className="relative flex-1 group">
-                          <input 
-                            type="file" 
-                            className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full" 
+                          <input
+                            type="file"
+                            className="absolute inset-0 opacity-0 cursor-pointer z-10 w-full"
                             onChange={(e) => handleFileChange(doc.id, e.target.files?.[0] || null)}
                           />
                           <div className={`flex items-center gap-2 px-3 h-9 rounded-md border text-xs transition-colors ${uploadedDocs[doc.id] ? "bg-emerald-50/50 border-emerald-200" : "bg-muted/30 group-hover:bg-muted"}`}>
@@ -291,9 +316,9 @@ export default function ServiceRequests() {
                           </div>
                         </div>
                         {uploadedDocs[doc.id] && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-9 w-9 text-muted-foreground hover:text-destructive shrink-0"
                             onClick={() => handleFileChange(doc.id, null)}
                           >
@@ -303,7 +328,7 @@ export default function ServiceRequests() {
                       </div>
                     </div>
                   ))}
-                  {currentType.documentChecklist.length === 0 && (
+                  {(currentType.documentChecklist || []).length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-2 italic">No documents required for this request type.</p>
                   )}
                 </div>
@@ -314,11 +339,11 @@ export default function ServiceRequests() {
               <Label htmlFor="req-desc" className="text-xs">Details</Label>
               <textarea id="req-desc" className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring" rows={3} placeholder="Provide additional details..." value={desc} onChange={e => setDesc(e.target.value)} />
             </div>
-            
+
             <div className="flex gap-2 pt-2">
               <button onClick={() => setNewOpen(false)} className="flex-1 h-10 rounded-lg border hover:bg-muted text-sm font-medium transition-colors">Cancel</button>
-              <button 
-                onClick={handleSubmit} 
+              <button
+                onClick={handleSubmit}
                 disabled={isSubmitDisabled}
                 className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >

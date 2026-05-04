@@ -14,7 +14,7 @@ import { ServiceRequestProvider } from "@/contexts/ServiceRequestContext";
 import Dashboard from "./pages/Dashboard";
 import IndividualDashboard from "./pages/IndividualDashboard";
 import VehicleFleet from "./pages/VehicleFleet";
-import ITAssets from "./pages/ITAssets";
+import Equipment from "./pages/Equipment";
 import Contracts from "./pages/Contracts";
 import Quotes from "./pages/Quotes";
 import Invoices from "./pages/Invoices";
@@ -103,7 +103,7 @@ function AppRoutes() {
       
       {/* ERP Routes */}
       <Route path="/vehicles"   element={<ProtectedRoute><VehicleFleet /></ProtectedRoute>} />
-      <Route path="/it-assets"  element={<ProtectedRoute><ITAssets /></ProtectedRoute>} />
+      <Route path="/equipment"  element={<ProtectedRoute><Equipment /></ProtectedRoute>} />
       <Route path="/contracts"  element={<ProtectedRoute><Contracts /></ProtectedRoute>} />
       <Route path="/quotes"     element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
       <Route path="/invoices"   element={<ProtectedRoute><Invoices /></ProtectedRoute>} />

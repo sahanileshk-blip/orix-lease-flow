@@ -186,7 +186,7 @@ export function DraggableDashboard({ cards, editMode, onEditModeChange }: Dragga
               className="layout"
               layout={layout}
               cols={12}
-              rowHeight={160}
+              rowHeight={140}
               width={containerWidth}
               margin={[16, 16]}
               containerPadding={[0, 0]}

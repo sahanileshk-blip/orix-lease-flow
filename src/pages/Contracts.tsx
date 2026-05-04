@@ -1,6 +1,8 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { locations } from "@/data/sampleData";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -33,8 +35,8 @@ function downloadCSV(data: any[], filename: string) {
 }
 
 const Contracts = () => {
-  const { rawContracts } = useAppData();
-  const { leaseStatusFilter } = useFilter();
+  const { rawContracts, clients, locations, costCenters } = useAppData();
+  const { clientFilter, setClientFilter, locationFilter, setLocationFilter, leaseStatusFilter, setLeaseStatusFilter, costCenterFilter, setCostCenterFilter } = useFilter();
   const [periodFilter, setPeriodFilter] = useState("");
   const [search, setSearch] = useState("");
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -45,6 +47,10 @@ const Contracts = () => {
 
   const filtered = rawContracts.filter((c) => {
     if (!user?.isAdmin && parseInt(c.id) % 2 === 0) return false; // Mock filtering logic for My Leases
+    if (clientFilter.length > 0 && !clientFilter.includes(c.clientId)) return false;
+    if (locationFilter.length > 0 && !locationFilter.includes(c.location)) return false;
+    if (costCenterFilter.length > 0 && !costCenterFilter.includes(c.costCenter)) return false;
+    if (leaseStatusFilter.length > 0 && !leaseStatusFilter.includes(c.status)) return false;
     if (search && !c.contractNo.toLowerCase().includes(search.toLowerCase()) && !c.clientName.toLowerCase().includes(search.toLowerCase())) return false;
 
     if (periodFilter !== "") {
@@ -132,19 +138,38 @@ const Contracts = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex flex-wrap gap-2 w-full md:w-auto ml-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search leases..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
-          </div>
-          <Input
-            type="month"
-            value={periodFilter}
-            onChange={(e) => setPeriodFilter(e.target.value)}
-            className="h-9 w-[180px]"
-          />
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search leases..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
+        {user?.isAdmin && (
+          <MultiSelect
+            placeholder="All Clients"
+            className="w-[160px]"
+            selected={clientFilter}
+            onChange={setClientFilter}
+            options={clients.map(c => ({ label: c.name, value: c.id }))}
+          />
+        )}
+        <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
+        <MultiSelect placeholder="Cost Center" className="w-[140px]" selected={costCenterFilter} onChange={setCostCenterFilter} options={costCenters.map(cc => ({ label: cc, value: cc }))} />
+        <MultiSelect
+          placeholder="Lease Status"
+          className="w-[155px]"
+          selected={leaseStatusFilter}
+          onChange={setLeaseStatusFilter}
+          options={[
+            { label: "Disbursed", value: "Disbursed" },
+            { label: "Foreclosed", value: "Foreclosed" },
+          ]}
+        />
+        <Input
+          type="month"
+          value={periodFilter}
+          onChange={(e) => setPeriodFilter(e.target.value)}
+          className="h-9 w-[180px]"
+        />
       </div>
 
       <div className="bg-card rounded-lg border overflow-x-auto">
@@ -302,7 +327,7 @@ const Contracts = () => {
           )}
         </DialogContent>
       </Dialog>
-      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Contracts" activeFilters={{ search, status: leaseStatusFilter.join(','), periodFilter }} />
+      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Contracts" activeFilters={{ search, status: leaseStatusFilter.join(','), periodFilter, client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
     </AppLayout>
   );
 };

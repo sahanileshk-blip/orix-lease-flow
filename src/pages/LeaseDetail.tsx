@@ -34,7 +34,7 @@ const statusColor: Record<string, string> = {
 
 export default function LeaseDetail() {
   const { id } = useParams();
-  const { rawContracts, invoices } = useAppData();
+  const { rawContracts, invoices, assets } = useAppData();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -289,6 +289,8 @@ export default function LeaseDetail() {
                 <h3 className="font-heading font-semibold text-sm mb-4">Lease Details</h3>
                 <div className="space-y-3">
                     {[
+                        { label: "Customer Name", value: contract.clientName },
+                        ...(contract.assetType === 'Vehicle' ? [{ label: "Vehicle Number", value: assets.find(a => a.clientId === contract.clientId && a.type === 'Vehicle')?.registrationNo || 'N/A' }] : []),
                         { label: "Asset Type", value: contract.assetType },
                         { label: "Cost Center", value: contract.costCenter },
                         { label: "Location", value: contract.location },

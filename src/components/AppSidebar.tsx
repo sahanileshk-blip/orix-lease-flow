@@ -18,9 +18,9 @@ import type { UserRole } from "@/contexts/AuthContext";
 const allErpItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["all"] },
   { title: "Vehicle Fleet", url: "/vehicles", icon: Car, roles: ["ORIX User", "Vehicle Asset Manager", "Fleet Manager"] },
-  { title: "IT Assets", url: "/it-assets", icon: Monitor, roles: ["ORIX User", "IT Asset Manager", "Fleet Manager"] },
+  { title: "Equipments", url: "/equipment", icon: Monitor, roles: ["ORIX User", "IT Asset Manager", "Fleet Manager"] },
   { title: "Lease Management", url: "/contracts", icon: FileText, roles: ["ORIX User", "Lease Manager", "Finance Manager", "Fleet Manager"] },
-  { title: "Quotations", url: "/quotes", icon: Calculator, roles: ["all"] },
+
   { title: "Invoices", url: "/invoices", icon: Receipt, roles: ["ORIX User", "Finance Manager", "Lease Manager", "Fleet Manager"] },
   { title: "Custom Reports", url: "/reports", icon: FileBarChart, roles: ["ORIX User", "Finance Manager", "Fleet Manager"] },
   { title: "Service Requests", url: "/tickets", icon: TicketPlus, roles: ["all"] },
@@ -38,7 +38,7 @@ const adminItems = [
 /* ── Individual User nav (5 modules only) ────────────────────────── */
 const individualItems = [
   { title: "Dashboard",        url: "/",              icon: LayoutDashboard },
-  { title: "Request Quotation", url: "/quotes",       icon: Calculator      },
+
   { title: "Service Requests", url: "/portal/service-requests", icon: TicketPlus      },
   { title: "Notifications",   url: "/notifications", icon: Bell            },
   { title: "Profile",          url: "/profile",       icon: User            },
@@ -127,7 +127,7 @@ export function AppSidebar() {
                       <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && (
                         <span className="text-sm">
-                          {item.url === "/quotes" && role === "Fleet Manager" ? "Request Quotation" : item.title}
+                          {item.title}
                         </span>
                       )}
                     </NavLink>

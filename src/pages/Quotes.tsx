@@ -65,12 +65,12 @@ const Quotes = () => {
   const { user } = useAuth();
 
   // Dynamic Form state
-  const [productType, setProductType] = useState("it-asset");
+  const [productType, setProductType] = useState("equipment");
   const [manufacturer, setManufacturer] = useState("");
   const [productName, setProductName] = useState("");
   const [variant, setVariant] = useState("");
 
-  // IT Specific
+  // Equipment Specific
   const [storage, setStorage] = useState("");
   const [ram, setRam] = useState("");
 
@@ -150,7 +150,7 @@ const Quotes = () => {
                     }}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="it-asset">IT Asset</SelectItem>
+                        <SelectItem value="equipment">Equipment</SelectItem>
                         <SelectItem value="vehicle">Vehicle</SelectItem>
                       </SelectContent>
                     </Select>
@@ -164,7 +164,7 @@ const Quotes = () => {
                     <Select value={manufacturer} onValueChange={setManufacturer} required>
                       <SelectTrigger><SelectValue placeholder="Select Manufacturer" /></SelectTrigger>
                       <SelectContent>
-                        {productType === "it-asset" ? (
+                        {productType === "equipment" ? (
                           <>
                             <SelectItem value="Apple">Apple</SelectItem>
                             <SelectItem value="Dell">Dell</SelectItem>
@@ -195,7 +195,7 @@ const Quotes = () => {
                     <Select value={productName} onValueChange={setProductName} required>
                       <SelectTrigger><SelectValue placeholder="Select Product Type" /></SelectTrigger>
                       <SelectContent>
-                        {productType === "it-asset" ? (
+                        {productType === "equipment" ? (
                           <>
                             <SelectItem value="Laptop">Laptop</SelectItem>
                             <SelectItem value="Desktop">Desktop</SelectItem>
@@ -218,8 +218,8 @@ const Quotes = () => {
                   </div>
                 </div>
 
-                {/* IT Asset Specific */}
-                {productType === "it-asset" && (productName.toLowerCase().includes("laptop") || productName.toLowerCase().includes("desktop") || productName.toLowerCase().includes("mac") || productName.toLowerCase().includes("pc")) && (
+                {/* Equipment Specific */}
+                {productType === "equipment" && (productName.toLowerCase().includes("laptop") || productName.toLowerCase().includes("desktop") || productName.toLowerCase().includes("mac") || productName.toLowerCase().includes("pc")) && (
                   <div className="grid grid-cols-2 gap-4 bg-muted/20 p-4 rounded-lg mt-2 border border-border/50">
                     <div className="space-y-2">
                       <Label>Storage</Label>

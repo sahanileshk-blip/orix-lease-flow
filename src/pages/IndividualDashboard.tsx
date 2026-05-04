@@ -15,6 +15,8 @@ import {
   IndianRupee, Building2, Smartphone
 } from "lucide-react";
 import { DraggableDashboard, CustomizeLayoutButton, type DashboardCardDef } from "@/components/dashboard/DraggableDashboard";
+import { useServiceRequest } from "@/contexts/ServiceRequestContext";
+import { useEffect } from "react";
 
 /* ── helpers ──────────────────────────────────────────────────────── */
 const fmt = (n: number) =>
@@ -54,7 +56,7 @@ function KPICard({ title, icon, children, accent = "blue", actionNode }: {
     red: "bg-red-500", violet: "bg-violet-500", teal: "bg-teal-500", orange: "bg-orange-500",
   };
   return (
-    <div className={`rounded-xl border bg-card p-5 shadow-sm flex flex-col gap-3 relative h-full ${ring[accent] ?? ""}`}>
+    <div className={`rounded-xl border bg-card p-4 shadow-sm flex flex-col gap-3 relative h-full ${ring[accent] ?? ""}`}>
       {actionNode && <div className="absolute top-4 right-4 z-10">{actionNode}</div>}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -68,13 +70,27 @@ function KPICard({ title, icon, children, accent = "blue", actionNode }: {
   );
 }
 
-/* ── page ─────────────────────────────────────────────────────────── */
 export default function IndividualDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { categories, requestTypes } = useServiceRequest();
 
   const [editMode, setEditMode] = useState(false);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
+  const [ticketCategory, setTicketCategory] = useState<string>("");
+  const [ticketType, setTicketType] = useState<string>("");
+  const [ticketDate, setTicketDate] = useState("");
+
+  useEffect(() => {
+    if (ticketType) {
+      const type = requestTypes.find(t => t.id === ticketType || t.name === ticketType);
+      if (type) {
+        const d = new Date();
+        d.setDate(d.getDate() + (type.slaInDays || 3));
+        setTicketDate(d.toISOString().split('T')[0]);
+      }
+    }
+  }, [ticketType, requestTypes]);
 
   const handleTicketSubmit = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
@@ -95,7 +111,7 @@ export default function IndividualDashboard() {
   const cards: DashboardCardDef[] = [
     {
       id: "ind-tenure",
-      defaultLayout: { x: 0, y: 0, w: 4, h: 2, minW: 3, minH: 1 },
+      defaultLayout: { x: 0, y: 0, w: 6, h: 1, minW: 3, minH: 1 },
       content: (
         <KPICard title="Lease Tenure Progress" icon={<CalendarClock className="h-4 w-4" />} accent="blue">
           <div>
@@ -116,53 +132,8 @@ export default function IndividualDashboard() {
       ),
     },
     {
-      id: "ind-payment",
-      defaultLayout: { x: 4, y: 0, w: 4, h: 2, minW: 3, minH: 1 },
-      content: (
-        <KPICard
-          title="Upcoming Payment"
-          icon={<CreditCard className="h-4 w-4" />}
-          accent="emerald"
-        >
-          <div className="flex items-end justify-between mt-2">
-            <div>
-              <p className="text-2xl font-bold text-foreground">{fmt(d.nextPaymentAmount)}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Due on {fmtDate(d.nextPaymentDate)}</p>
-            </div>
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${daysToPayment <= 5 ? "bg-red-500/15 text-red-500 border border-red-500/30"
-                : daysToPayment <= 15 ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
-                  : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
-              }`}>
-              {daysToPayment > 0 ? `${daysToPayment}d left` : "Due today"}
-            </span>
-          </div>
-        </KPICard>
-      ),
-    },
-    {
-      id: "ind-balance",
-      defaultLayout: { x: 8, y: 0, w: 4, h: 2, minW: 3, minH: 1 },
-      content: (
-        <KPICard title="Outstanding Lease Balance" icon={<TrendingDown className="h-4 w-4" />} accent="violet">
-          <div>
-            <p className="text-2xl font-bold text-foreground">{fmt(balance)}</p>
-            <div className="mt-2.5">
-              <div className="flex justify-between text-[11px] text-muted-foreground mb-1">
-                <span>Paid: {fmt(d.amountPaid)}</span>
-                <span>{paidPct}%</span>
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400" style={{ width: `${paidPct}%` }} />
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">Total lease value: {fmt(d.totalLeaseValue)}</p>
-            </div>
-          </div>
-        </KPICard>
-      ),
-    },
-    {
       id: "ind-insurance",
-      defaultLayout: { x: 0, y: 2, w: 4, h: 2, minW: 3, minH: 1 },
+      defaultLayout: { x: 6, y: 0, w: 6, h: 1, minW: 3, minH: 1 },
       content: (
         <KPICard title="Insurance Policy Status" icon={<ShieldAlert className="h-4 w-4" />} accent={d.insuranceStatus === "Active" ? "emerald" : "red"}>
           <div className="flex items-center justify-between">
@@ -186,7 +157,7 @@ export default function IndividualDashboard() {
     },
     {
       id: "ind-tickets",
-      defaultLayout: { x: 4, y: 2, w: 4, h: 2, minW: 3, minH: 1 },
+      defaultLayout: { x: 0, y: 1, w: 6, h: 2, minW: 3, minH: 1 },
       content: (
         <KPICard
           title="Open Service Requests"
@@ -223,7 +194,7 @@ export default function IndividualDashboard() {
     },
     {
       id: "ind-residual",
-      defaultLayout: { x: 8, y: 2, w: 4, h: 2, minW: 3, minH: 1 },
+      defaultLayout: { x: 6, y: 1, w: 6, h: 1, minW: 3, minH: 1 },
       content: (
         <KPICard title="Residual Value (RV)" icon={<TrendingDown className="h-4 w-4" />} accent="teal">
           <div className="flex items-end justify-between">
@@ -283,7 +254,7 @@ export default function IndividualDashboard() {
       />
 
       {/* ── Escalation Support ── */}
-      <div className="mt-4 rounded-xl border border-orange-500/20 bg-orange-500/5 p-5">
+      <div className="mt-4 rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
         <div className="flex items-center gap-2 mb-4">
           <PhoneCall className="h-4 w-4 text-orange-400" />
           <h2 className="text-sm font-semibold text-foreground">Escalation Support</h2>
@@ -337,27 +308,21 @@ export default function IndividualDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Category</Label>
-                <Select defaultValue="Vehicle">
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <Select value={ticketCategory} onValueChange={(val) => { setTicketCategory(val); setTicketType(""); }}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Select Category" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="IT">IT</SelectItem>
-                    <SelectItem value="Vehicle">Vehicle</SelectItem>
-                    <SelectItem value="Invoice">Invoice</SelectItem>
-                    <SelectItem value="Finance">Finance</SelectItem>
-                    <SelectItem value="General">General</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Request Type</Label>
-                <Select defaultValue="Service Request">
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <Select value={ticketType} onValueChange={setTicketType} disabled={!ticketCategory}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder={ticketCategory ? "Select Type" : "Select Category first"} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Service Request">Service Request</SelectItem>
-                    <SelectItem value="Closure Request">Closure Request</SelectItem>
-                    <SelectItem value="Report Breakdown">Report Breakdown</SelectItem>
-                    <SelectItem value="Report Stolen Item">Report Stolen Item</SelectItem>
+                    {ticketCategory && requestTypes.filter(t => t.categoryId === ticketCategory).map(type => (
+                      <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -379,6 +344,17 @@ export default function IndividualDashboard() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Required Date</Label>
+              <Input
+                type="date"
+                value={ticketDate}
+                onChange={e => setTicketDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="h-9"
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="req-subject" className="text-xs">Subject</Label>

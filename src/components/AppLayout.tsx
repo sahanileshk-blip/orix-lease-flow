@@ -16,7 +16,7 @@ import { useEffect } from "react";
 const MODULE_LABELS: Record<string, { label: string; icon: string }> = {
   "/":           { label: "Dashboard",       icon: "layout" },
   "/vehicles":   { label: "Vehicle Fleet",   icon: "car"    },
-  "/it-assets":  { label: "IT Assets",       icon: "monitor"},
+  "/equipment":  { label: "Equipments",       icon: "monitor"},
   "/contracts":  { label: "Leases",          icon: "file"   },
   "/invoices":   { label: "Invoices",        icon: "receipt"},
   "/reports":    { label: "Reports",         icon: "chart"  },
@@ -63,7 +63,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               {!isIndividual && <QuickActionsBar />}
 
               {/* Admin global filters */}
-              {user?.isAdmin && !isIndividual && (
+              {user?.isAdmin && !isIndividual && location.pathname === '/' && (
                 <div className="hidden sm:flex items-center gap-2 ml-2">
                   <span className="text-xs text-muted-foreground">Client:</span>
                   <MultiSelect
@@ -78,10 +78,10 @@ export function AppLayout({ children }: AppLayoutProps) {
                   />
                 </div>
               )}
-              {user && !user.isAdmin && !isIndividual && (
+              {user && !user.isAdmin && !isIndividual && location.pathname === '/' && (
                 <span className="text-xs text-muted-foreground hidden sm:block truncate">{user.clientName}</span>
               )}
-              {!isIndividual && (
+              {!isIndividual && location.pathname === '/' && (
               <div className="hidden lg:flex items-center gap-2">
                 <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
                 <MultiSelect

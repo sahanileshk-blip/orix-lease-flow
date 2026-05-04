@@ -19,9 +19,9 @@ interface Action {
 
 const roleActions: Record<string, Action[]> = {
   "IT Asset Manager": [
-    { label: "Add IT Asset", icon: Plus, navigate: "/it-assets", color: "text-indigo-500" },
-    { label: "Assign Asset", icon: Monitor, navigate: "/it-assets", color: "text-sky-500" },
-    { label: "Raise IT Ticket", icon: ClipboardList, navigate: "/tickets", color: "text-amber-500" },
+    { label: "Add Equipment", icon: Plus, navigate: "/equipment", color: "text-indigo-500" },
+    { label: "Assign Asset", icon: Monitor, navigate: "/equipment", color: "text-sky-500" },
+    { label: "Raise Equipment Ticket", icon: ClipboardList, navigate: "/tickets", color: "text-amber-500" },
   ],
   "Vehicle Asset Manager": [
     { label: "Add Vehicle", icon: Plus, navigate: "/vehicles", color: "text-sky-500" },
@@ -29,7 +29,7 @@ const roleActions: Record<string, Action[]> = {
     { label: "Schedule Maintenance", icon: Wrench, navigate: "/tickets", color: "text-orange-500" },
   ],
   "Lease Manager": [
-    { label: "Create Lease", icon: Plus, navigate: "/quotes", color: "text-emerald-500" },
+
     { label: "Renew Lease", icon: RefreshCw, navigate: "/contracts", color: "text-sky-500" },
     { label: "Invoice", icon: ReceiptText, navigate: "/invoices", color: "text-violet-500" },
   ],
@@ -44,7 +44,7 @@ const roleActions: Record<string, Action[]> = {
   ],
   "Fleet Manager": [
     { label: "Invoice", icon: ReceiptText, navigate: "/invoices", color: "text-violet-500" },
-    { label: "Request Quotation", icon: FileSignature, navigate: "/quotes", color: "text-amber-500" },
+
     { label: "Document Center", icon: FolderOpen, navigate: "/documents", color: "text-sky-500" },
     { label: "View custom reports", icon: FileBarChart, navigate: "/reports", color: "text-emerald-500" },
   ],

@@ -11,6 +11,7 @@ export interface ServiceRequestType {
   categoryId: string;
   name: string;
   documentChecklist: DocumentChecklistItem[];
+  slaInDays: number;
 }
 
 export interface ServiceRequestCategory {
@@ -24,8 +25,8 @@ interface ServiceRequestContextType {
   addCategory: (name: string) => void;
   updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => void;
-  addRequestType: (categoryId: string, name: string, checklist: DocumentChecklistItem[]) => void;
-  updateRequestType: (id: string, name: string, checklist: DocumentChecklistItem[]) => void;
+  addRequestType: (categoryId: string, name: string, checklist: DocumentChecklistItem[], slaInDays: number) => void;
+  updateRequestType: (id: string, name: string, checklist: DocumentChecklistItem[], slaInDays: number) => void;
   deleteRequestType: (id: string) => void;
 }
 
@@ -33,7 +34,7 @@ const ServiceRequestContext = createContext<ServiceRequestContextType | undefine
 
 const DEFAULT_CATEGORIES: ServiceRequestCategory[] = [
   { id: "cat1", name: "Vehicle" },
-  { id: "cat2", name: "IT Equipment" },
+  { id: "cat2", name: "Equipment" },
   { id: "cat3", name: "Finance" },
 ];
 
@@ -46,6 +47,7 @@ const DEFAULT_TYPES: ServiceRequestType[] = [
       { id: "doc1", name: "Maintenance Log", isMandatory: true },
       { id: "doc2", name: "Service Estimate", isMandatory: false },
     ],
+    slaInDays: 3,
   },
   {
     id: "type2",
@@ -56,6 +58,7 @@ const DEFAULT_TYPES: ServiceRequestType[] = [
       { id: "doc4", name: "Insurance Policy", isMandatory: true },
       { id: "doc5", name: "Photos of Damage", isMandatory: false },
     ],
+    slaInDays: 7,
   },
   {
     id: "type3",
@@ -64,6 +67,7 @@ const DEFAULT_TYPES: ServiceRequestType[] = [
     documentChecklist: [
       { id: "doc6", name: "Error Screenshot", isMandatory: true },
     ],
+    slaInDays: 2,
   },
 ];
 
@@ -100,13 +104,13 @@ export function ServiceRequestProvider({ children }: { children: ReactNode }) {
     setRequestTypes(requestTypes.filter(t => t.categoryId !== id));
   };
 
-  const addRequestType = (categoryId: string, name: string, checklist: DocumentChecklistItem[]) => {
-    const newType = { id: `type_${Date.now()}`, categoryId, name, documentChecklist: checklist };
+  const addRequestType = (categoryId: string, name: string, checklist: DocumentChecklistItem[], slaInDays: number) => {
+    const newType = { id: `type_${Date.now()}`, categoryId, name, documentChecklist: checklist, slaInDays };
     setRequestTypes([...requestTypes, newType]);
   };
 
-  const updateRequestType = (id: string, name: string, checklist: DocumentChecklistItem[]) => {
-    setRequestTypes(requestTypes.map(t => t.id === id ? { ...t, name, documentChecklist: checklist } : t));
+  const updateRequestType = (id: string, name: string, checklist: DocumentChecklistItem[], slaInDays: number) => {
+    setRequestTypes(requestTypes.map(t => t.id === id ? { ...t, name, documentChecklist: checklist, slaInDays } : t));
   };
 
   const deleteRequestType = (id: string) => {

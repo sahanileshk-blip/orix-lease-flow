@@ -1,6 +1,8 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { locations, costCenters } from "@/data/sampleData";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,16 +27,20 @@ function downloadCSV(data: any[], filename: string) {
   URL.revokeObjectURL(url);
 }
 
-const ITAssets = () => {
-  const { assets } = useAppData();
-  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
-  const itAssets = assets.filter(a => a.type === 'IT Equipment');
+const Equipment = () => {
+  const { user } = useAuth();
+  const { assets, clients } = useAppData();
+  const { clientFilter, setClientFilter, locationFilter, setLocationFilter, leaseStatusFilter, setLeaseStatusFilter, costCenterFilter, setCostCenterFilter } = useFilter();
+  const equipments = assets.filter(a => a.type === 'Equipment');
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
-  const filtered = itAssets.filter((a) => {
+  const filtered = equipments.filter((a) => {
     if (categoryFilter.length > 0 && !categoryFilter.includes(a.category || '')) return false;
+    if (clientFilter.length > 0 && !clientFilter.includes(a.clientId || '')) return false;
+    if (locationFilter.length > 0 && !locationFilter.includes(a.location || '')) return false;
+    if (costCenterFilter.length > 0 && !costCenterFilter.includes(a.costCenter || '')) return false;
     if (search && !a.description.toLowerCase().includes(search.toLowerCase()) && !a.assetTag.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -54,14 +60,14 @@ const ITAssets = () => {
     <AppLayout>
       <div className="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="page-title">IT Equipment Management</h1>
+          <h1 className="page-title">Equipments</h1>
           <p className="page-description">Track hardware and software assets, allocation, and compliance</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-1.5" onClick={() => setReportModalOpen(true)}>
             <Save className="h-4 w-4" /> Save Custom Report
           </Button>
-          <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'it-assets.csv')}>
+          <Button variant="outline" className="gap-1.5" onClick={() => downloadCSV(filtered, 'equipment-assets.csv')}>
             <Download className="h-4 w-4" /> Download CSV
           </Button>
         </div>
@@ -73,29 +79,29 @@ const ITAssets = () => {
             <Monitor className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Total IT Equipment</p>
-            <p className="text-xl font-bold font-heading">{itAssets.length}</p>
+            <p className="text-xs text-muted-foreground">Total Equipments</p>
+            <p className="text-xl font-bold font-heading">{equipments.length}</p>
           </div>
         </div>
         <div className="kpi-card flex items-center gap-3">
           <Cpu className="h-5 w-5 text-primary" />
           <div>
             <p className="text-xs text-muted-foreground">Laptops</p>
-            <p className="text-xl font-bold font-heading">{itAssets.filter(a => a.category === 'Laptop').length}</p>
+            <p className="text-xl font-bold font-heading">{equipments.filter(a => a.category === 'Laptop').length}</p>
           </div>
         </div>
         <div className="kpi-card flex items-center gap-3">
           <HardDrive className="h-5 w-5 text-warning" />
           <div>
             <p className="text-xs text-muted-foreground">Desktops</p>
-            <p className="text-xl font-bold font-heading">{itAssets.filter(a => a.category === 'Desktop').length}</p>
+            <p className="text-xl font-bold font-heading">{equipments.filter(a => a.category === 'Desktop').length}</p>
           </div>
         </div>
         <div className="kpi-card flex items-center gap-3">
           <Monitor className="h-5 w-5 text-muted-foreground" />
           <div>
             <p className="text-xs text-muted-foreground">Other</p>
-            <p className="text-xl font-bold font-heading">{itAssets.filter(a => a.category !== 'Laptop' && a.category !== 'Desktop').length}</p>
+            <p className="text-xl font-bold font-heading">{equipments.filter(a => a.category !== 'Laptop' && a.category !== 'Desktop').length}</p>
           </div>
         </div>
       </div>
@@ -103,8 +109,29 @@ const ITAssets = () => {
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search IT equipment..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
+          <Input placeholder="Search equipments..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
+        {user?.isAdmin && (
+          <MultiSelect
+            placeholder="All Clients"
+            className="w-[160px]"
+            selected={clientFilter}
+            onChange={setClientFilter}
+            options={clients.map(c => ({ label: c.name, value: c.id }))}
+          />
+        )}
+        <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
+        <MultiSelect
+          placeholder="Lease Status"
+          className="w-[155px]"
+          selected={leaseStatusFilter}
+          onChange={setLeaseStatusFilter}
+          options={[
+            { label: "Disbursed", value: "Disbursed" },
+            { label: "Foreclosed", value: "Foreclosed" },
+          ]}
+        />
+        <MultiSelect placeholder="Cost Center" className="w-[140px]" selected={costCenterFilter} onChange={setCostCenterFilter} options={costCenters.map(cc => ({ label: cc, value: cc }))} />
         <MultiSelect
           placeholder="Category"
           className="w-[150px]"
@@ -178,7 +205,7 @@ const ITAssets = () => {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <p className="text-center py-8 text-muted-foreground text-sm">No IT equipment found</p>
+          <p className="text-center py-8 text-muted-foreground text-sm">No equipments found</p>
         )}
         <TablePagination
           totalItems={totalItems}
@@ -190,9 +217,9 @@ const ITAssets = () => {
           endIndex={endIndex}
         />
       </div>
-      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="IT Assets" activeFilters={{ search, category: categoryFilter.join(','), client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
+      <SaveReportModal open={reportModalOpen} onOpenChange={setReportModalOpen} moduleName="Equipments" activeFilters={{ search, category: categoryFilter.join(','), client: clientFilter.join(','), costCenter: costCenterFilter.join(','), location: locationFilter.join(',') }} />
     </AppLayout>
   );
 };
 
-export default ITAssets;
+export default Equipment;

@@ -1,6 +1,8 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { locations, costCenters } from "@/data/sampleData";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,8 +27,9 @@ function downloadCSV(data: any[], filename: string) {
 }
 
 const VehicleFleet = () => {
-  const { assets } = useAppData();
-  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
+  const { user } = useAuth();
+  const { assets, clients } = useAppData();
+  const { clientFilter, setClientFilter, locationFilter, setLocationFilter, leaseStatusFilter, setLeaseStatusFilter, costCenterFilter, setCostCenterFilter } = useFilter();
   const vehicles = assets.filter(a => a.type === 'Vehicle');
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [search, setSearch] = useState("");
@@ -34,6 +37,9 @@ const VehicleFleet = () => {
 
   const filtered = vehicles.filter((a) => {
     if (categoryFilter.length > 0 && !categoryFilter.includes(a.category || '')) return false;
+    if (clientFilter.length > 0 && !clientFilter.includes(a.clientId || '')) return false;
+    if (locationFilter.length > 0 && !locationFilter.includes(a.location || '')) return false;
+    if (costCenterFilter.length > 0 && !costCenterFilter.includes(a.costCenter || '')) return false;
     if (search && !a.description.toLowerCase().includes(search.toLowerCase()) && !a.assetTag.toLowerCase().includes(search.toLowerCase()) && !a.registrationNo?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -99,17 +105,8 @@ const VehicleFleet = () => {
             <Car className="h-5 w-5 text-[hsl(var(--success))]" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Two Wheeler – Bike</p>
-            <p className="text-xl font-bold font-heading">{vehicles.filter(a => a.category === 'Two Wheeler - Bike').length}</p>
-          </div>
-        </div>
-        <div className="kpi-card flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Car className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Two Wheeler – Scooty</p>
-            <p className="text-xl font-bold font-heading">{vehicles.filter(a => a.category === 'Two Wheeler - Scooty').length}</p>
+            <p className="text-xs text-muted-foreground">EPP</p>
+            <p className="text-xl font-bold font-heading">{vehicles.filter(a => a.category === 'EPP').length}</p>
           </div>
         </div>
       </div>
@@ -119,6 +116,27 @@ const VehicleFleet = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search vehicles..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
+        {user?.isAdmin && (
+          <MultiSelect
+            placeholder="All Clients"
+            className="w-[160px]"
+            selected={clientFilter}
+            onChange={setClientFilter}
+            options={clients.map(c => ({ label: c.name, value: c.id }))}
+          />
+        )}
+        <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
+        <MultiSelect
+          placeholder="Lease Status"
+          className="w-[155px]"
+          selected={leaseStatusFilter}
+          onChange={setLeaseStatusFilter}
+          options={[
+            { label: "Disbursed", value: "Disbursed" },
+            { label: "Foreclosed", value: "Foreclosed" },
+          ]}
+        />
+        <MultiSelect placeholder="Cost Center" className="w-[140px]" selected={costCenterFilter} onChange={setCostCenterFilter} options={costCenters.map(cc => ({ label: cc, value: cc }))} />
         <MultiSelect
           placeholder="Category"
           className="w-[175px]"
@@ -127,8 +145,7 @@ const VehicleFleet = () => {
           options={[
             { label: "Passenger Car", value: "Passenger Car" },
             { label: "Commercial Vehicle", value: "Commercial Vehicle" },
-            { label: "Two Wheeler - Bike", value: "Two Wheeler - Bike" },
-            { label: "Two Wheeler - Scooty", value: "Two Wheeler - Scooty" },
+            { label: "EPP", value: "EPP" },
           ]}
         />
       </div>

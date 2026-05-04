@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/AppLayout";
 import { useAppData } from "@/hooks/useAppData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -33,9 +33,9 @@ function downloadCSV(data: any[], filename: string) {
 }
 
 const Tickets = () => {
-  const { tickets } = useAppData();
+  const { tickets, clients, locations, costCenters } = useAppData();
   const { categories, requestTypes } = useServiceRequest();
-  const { clientFilter, costCenterFilter, locationFilter } = useFilter();
+  const { clientFilter, setClientFilter, locationFilter, setLocationFilter, costCenterFilter, setCostCenterFilter } = useFilter();
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<string[]>([]);
@@ -45,6 +45,7 @@ const Tickets = () => {
   const [description, setDescription] = useState("");
   const [ticketCategory, setTicketCategory] = useState<string>("");
   const [ticketType, setTicketType] = useState<string>("");
+  const [ticketDate, setTicketDate] = useState<string>("");
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
   const [newStatus, setNewStatus] = useState("Open");
@@ -56,6 +57,17 @@ const Tickets = () => {
   const isIndividual = !!user?.isIndividual;
   const isSuperAdmin = user?.role === "IT Admin (ORIX)";
 
+  useEffect(() => {
+    if (ticketType) {
+      const type = requestTypes.find(t => t.id === ticketType || t.name === ticketType);
+      if (type) {
+        const d = new Date();
+        d.setDate(d.getDate() + (type.slaInDays || 3));
+        setTicketDate(d.toISOString().split('T')[0]);
+      }
+    }
+  }, [ticketType, requestTypes]);
+
   const filtered = tickets.filter((t) => {
     // Individual users only see their own asset's tickets
     if (isIndividual) {
@@ -66,6 +78,9 @@ const Tickets = () => {
     if (statusFilter.length > 0 && !statusFilter.includes(t.status)) return false;
     if (categoryFilter.length > 0 && !categoryFilter.includes(t.category)) return false;
     if (priorityFilter.length > 0 && !priorityFilter.includes(t.priority)) return false;
+    if (clientFilter.length > 0 && !clientFilter.includes(t.clientId)) return false;
+    if (locationFilter.length > 0 && !locationFilter.includes(t.location)) return false;
+    if (costCenterFilter.length > 0 && !costCenterFilter.includes(t.costCenter)) return false;
     if (search && !t.subject.toLowerCase().includes(search.toLowerCase()) && !t.ticketNo.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -200,6 +215,8 @@ const Tickets = () => {
                         className={isIndividual ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}
                       />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Priority</Label>
                       <Select defaultValue="Medium">
@@ -211,6 +228,16 @@ const Tickets = () => {
                           <SelectItem value="Critical">Critical</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Required Date</Label>
+                      <Input
+                        type="date"
+                        value={ticketDate}
+                        onChange={e => setTicketDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        required
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -268,6 +295,17 @@ const Tickets = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search tickets..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 w-[220px]" />
         </div>
+        {user?.isAdmin && (
+          <MultiSelect
+            placeholder="All Clients"
+            className="w-[160px]"
+            selected={clientFilter}
+            onChange={setClientFilter}
+            options={clients.map(c => ({ label: c.name, value: c.id }))}
+          />
+        )}
+        <MultiSelect placeholder="Locations" className="w-[140px]" selected={locationFilter} onChange={setLocationFilter} options={locations.map(l => ({ label: l, value: l }))} />
+        <MultiSelect placeholder="Cost Center" className="w-[140px]" selected={costCenterFilter} onChange={setCostCenterFilter} options={costCenters.map(cc => ({ label: cc, value: cc }))} />
         <MultiSelect
           placeholder="Status"
           className="w-[150px]"
@@ -287,7 +325,7 @@ const Tickets = () => {
           onChange={setCategoryFilter}
           options={[
             { label: "Vehicle", value: "Vehicle" },
-            { label: "IT", value: "IT" },
+            { label: "Equipment", value: "Equipment" },
             { label: "Lease", value: "Lease" },
           ]}
         />
@@ -408,9 +446,9 @@ const Tickets = () => {
             </div>
             <div className="space-y-2">
               <Label>Add Remark</Label>
-              <Textarea 
-                placeholder="Enter progress remarks or resolution details..." 
-                rows={3} 
+              <Textarea
+                placeholder="Enter progress remarks or resolution details..."
+                rows={3}
                 value={remarkText}
                 onChange={(e) => setRemarkText(e.target.value)}
               />

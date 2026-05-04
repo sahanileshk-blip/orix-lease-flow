@@ -10,6 +10,7 @@ import {
   Clock, History, Star, CreditCard, ShieldCheck, ArrowRight, User2,
   FolderOpen, Users, LogIn, Activity, Globe, LayoutDashboard, Flag, Settings, DollarSign, Info
 } from "lucide-react";
+import { useServiceRequest } from "@/contexts/ServiceRequestContext";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis, Legend,
@@ -53,11 +54,6 @@ function getExpiringLeases(contracts: any[], minDays: number, maxDays: number) {
 
 const COLORS = ["hsl(210,52%,24%)", "hsl(199,89%,48%)", "hsl(142,71%,45%)", "hsl(38,92%,50%)", "hsl(0,72%,51%)"];
 
-const TICKET_CATEGORIES: Record<string, string[]> = {
-  "Vehicle": ["Service / Maintenance", "Accident Reporting", "Replacement Request", "General Query"],
-  "IT Equipment": ["Hardware Issue", "Software Issue", "Replacement Request", "Upgrade Request"]
-};
-
 export default function Dashboard() {
   const { dashboardKPIs, contracts, tickets, notifications, assets, auditLogs, invoices } = useAppData();
   const { user } = useAuth();
@@ -65,12 +61,25 @@ export default function Dashboard() {
   const { resetDashboardLayout, recentModules } = usePersonalization();
   const { toast } = useToast();
   const { clientFilter, setClientFilter } = useFilter();
-  
+  const { categories, requestTypes } = useServiceRequest();
+
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [ticketDesc, setTicketDesc] = useState("");
   const [ticketCategory, setTicketCategory] = useState<string>("");
   const [ticketType, setTicketType] = useState<string>("");
+  const [ticketDate, setTicketDate] = useState<string>("");
   const [healthClientFilter, setHealthClientFilter] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (ticketType) {
+      const type = requestTypes.find(t => t.id === ticketType || t.name === ticketType);
+      if (type) {
+        const d = new Date();
+        d.setDate(d.getDate() + (type.slaInDays || 3));
+        setTicketDate(d.toISOString().split('T')[0]);
+      }
+    }
+  }, [ticketType, requestTypes]);
 
   const handleTicketSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +100,7 @@ export default function Dashboard() {
 
   const role = user?.role ?? "RM - Orix";
   const isPortalUser = user?.isPortalUser;
-  
+
   const openExpiringDrill = useCallback(() => {
     const expiringLeases = getExpiringLeases(contracts, 0, parseInt(expiryWindow));
     const rows = expiringLeases.map(c => ({ id: c.contractNo ?? c.id, client: c.clientName ?? "—", asset: c.assetType ?? "—", value: c.monthlyRental ?? 0, status: c.status }));
@@ -104,9 +113,9 @@ export default function Dashboard() {
   const renderITAdmin = () => {
     const failedLogins = auditLogs.filter(a => a.status !== 'Success' && a.module === 'Authentication').length;
     const loginConfigChanges = auditLogs.filter(a => a.module === 'Login Config').length + 2; // Mock adding some interactions
-    const newUsersCount = 14; 
+    const newUsersCount = 14;
     const totalUsers = 152;
-    
+
     // Usage mock
     const moduleUsage = [
       { name: "Auth", interactions: 210, fill: "hsl(210,52%,40%)" },
@@ -114,11 +123,11 @@ export default function Dashboard() {
       { name: "Leases", interactions: 120, fill: "hsl(210,52%,60%)" },
       { name: "Invoices", interactions: 95, fill: "hsl(210,52%,70%)" },
       { name: "Reports", interactions: 85, fill: "hsl(210,52%,80%)" },
-      { name: "IT Assets", interactions: 65, fill: "hsl(210,52%,85%)" },
+      { name: "Equipment", interactions: 65, fill: "hsl(210,52%,85%)" },
       { name: "Tickets", interactions: 30, fill: "hsl(210,52%,90%)" },
       { name: "Config", interactions: 12, fill: "hsl(210,52%,92%)" },
     ];
-    
+
     const loginTrendsWeekly = [
       { day: "Mon", count: 420 }, { day: "Tue", count: 510 }, { day: "Wed", count: 480 },
       { day: "Thu", count: 590 }, { day: "Fri", count: 500 }, { day: "Sat", count: 120 }, { day: "Sun", count: 90 }
@@ -131,7 +140,7 @@ export default function Dashboard() {
 
     const openModuleDrill = (moduleName: string, count: number) => {
       const roles = ['RM - Orix', 'Client Admin', 'Lease Manager', 'Vehicle Asset Manager'];
-      const mockRows = Array.from({length: Math.min(count, 15)}).map((_, i) => ({
+      const mockRows = Array.from({ length: Math.min(count, 15) }).map((_, i) => ({
         id: `USR-${1000 + i + Math.floor(Math.random() * 100)}`,
         role: roles[i % roles.length],
         interactions: Math.floor(Math.random() * 5) + 1,
@@ -151,7 +160,7 @@ export default function Dashboard() {
     };
 
     const openLoginDrill = (period: string, count: number) => {
-      const mockRows = Array.from({length: Math.min(count, 15)}).map((_, i) => ({
+      const mockRows = Array.from({ length: Math.min(count, 15) }).map((_, i) => ({
         id: `LOG-${1000 + i}`,
         user: ['John Doe', 'Alice Smith', 'Bob Johnson', 'Admin Team'][i % 4],
         ip: `192.168.1.${Math.floor(Math.random() * 255)}`,
@@ -173,7 +182,7 @@ export default function Dashboard() {
     };
 
     const openDocDrill = (type: string, count: number) => {
-      const mockRows = Array.from({length: Math.min(count, 15)}).map((_, i) => ({
+      const mockRows = Array.from({ length: Math.min(count, 15) }).map((_, i) => ({
         id: `DOC-${2000 + i}`,
         name: `${['Invoice', 'Lease Agreement', 'KYC', 'Vehicle Reg'][i % 4]}_${i}.pdf`,
         user: ['Client Admin', 'RM Orix', 'Fleet Manager'][i % 3],
@@ -320,8 +329,8 @@ export default function Dashboard() {
     const openSupport = dashTickets.filter(t => t.status === 'Open' || t.status === 'In Progress').length;
 
     const healthData = healthClientFilter.length === 0
-      ? [ { name: "Good", value: 65, fill: "hsl(142,71%,45%)" }, { name: "At Risk", value: 20, fill: "hsl(38,92%,50%)" }, { name: "Overdue", value: 15, fill: "hsl(0,72%,51%)" } ]
-      : [ { name: "Good", value: 85, fill: "hsl(142,71%,45%)" }, { name: "At Risk", value: 5, fill: "hsl(38,92%,50%)" }, { name: "Overdue", value: 10, fill: "hsl(0,72%,51%)" } ];
+      ? [{ name: "Good", value: 65, fill: "hsl(142,71%,45%)" }, { name: "At Risk", value: 20, fill: "hsl(38,92%,50%)" }, { name: "Overdue", value: 15, fill: "hsl(0,72%,51%)" }]
+      : [{ name: "Good", value: 85, fill: "hsl(142,71%,45%)" }, { name: "At Risk", value: 5, fill: "hsl(38,92%,50%)" }, { name: "Overdue", value: 10, fill: "hsl(0,72%,51%)" }];
 
     const openHealthDrill = (status: string, percentage: number) => {
       const sourceInvoices = healthClientFilter.length > 0 ? invoices.filter(i => healthClientFilter.includes(i.clientName)) : invoices;
@@ -472,7 +481,7 @@ export default function Dashboard() {
     const openFacilityDrill = (segment: string) => {
       // Filter for active/disbursed contracts that contribute to utilization
       const relevantContracts = contracts.filter(c => c.status === 'Disbursed');
-      
+
       setDrillModal({
         title: `Facility Utilization Breakdown (${segment})`,
         columns: [
@@ -511,23 +520,23 @@ export default function Dashboard() {
     const maxExp = Math.max(exp30, exp60, exp90, 5); // for bar scaling
 
     const overdueInvs = invoices.filter(i => i.status === 'Overdue');
-    const overdueAmt = overdueInvs.reduce((a,b)=>a+b.amount,0);
+    const overdueAmt = overdueInvs.reduce((a, b) => a + b.amount, 0);
 
     const assetPie = [
       { name: "Vehicles", value: dashboardKPIs.assetsByType.Vehicle, fill: "hsl(210,52%,40%)" },
-      { name: "IT Assets", value: dashboardKPIs.assetsByType["IT Equipment"], fill: "hsl(199,89%,48%)" }
+      { name: "Equipment", value: dashboardKPIs.assetsByType["Equipment"], fill: "hsl(199,89%,48%)" }
     ];
 
     const hrCards: DashboardCardDef[] = [
       {
         id: 'hr-kpi-assets',
         defaultLayout: { x: 0, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
-        content: <KPICard label="Assigned Assets" value={dashboardKPIs.totalAssets} icon={<Layers className="h-5 w-5 text-indigo-500" />} iconBg="bg-indigo-50 dark:bg-indigo-900/20" insight="Active employee assignments" onClick={() => navigate('/vehicles')} />,
+        content: <KPICard label="Total Assets" value={dashboardKPIs.totalAssets} icon={<Layers className="h-5 w-5 text-indigo-500" />} iconBg="bg-indigo-50 dark:bg-indigo-900/20" insight="Active employee assignments" onClick={() => navigate('/vehicles')} />,
       },
       {
         id: 'hr-kpi-disbursed',
         defaultLayout: { x: 3, y: 0, w: 3, h: 1, minW: 2, minH: 1 },
-        content: <KPICard label="Disbursed (FY26)" value={contracts.filter(c => c.status === 'Disbursed' && c.startDate.startsWith('2026')).length} icon={<TrendingUp className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20" insight="New leases funded this year" />,
+        content: <KPICard label="Assets-Current Financial Year" value={contracts.filter(c => c.status === 'Disbursed' && c.startDate.startsWith('2026')).length} icon={<TrendingUp className="h-5 w-5 text-emerald-500" />} iconBg="bg-emerald-50 dark:bg-emerald-900/20" insight="New leases funded this year" />,
       },
       {
         id: 'hr-kpi-overdue',
@@ -553,7 +562,7 @@ export default function Dashboard() {
                       <Cell key={i} fill={d.fill} className="cursor-pointer hover:opacity-80 transition-opacity outline-none" onClick={() => openFacilityDrill(d.name)} />
                     ))}
                   </Pie>
-                  <RechartsTooltip formatter={(v: number) => formatCurrency(v)} cursor={{fill: 'transparent'}} />
+                  <RechartsTooltip formatter={(v: number) => formatCurrency(v)} cursor={{ fill: 'transparent' }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -589,21 +598,21 @@ export default function Dashboard() {
                   <span className="text-orange-500 font-medium">Coming 30 Days</span>
                   <div className="text-right"><span className="font-bold">{exp30} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp30Val)} at risk</p></div>
                 </div>
-                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: `${Math.max((exp30/maxExp)*100, 2)}%`}}></div></div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-orange-400 to-orange-500" style={{ width: `${Math.max((exp30 / maxExp) * 100, 2)}%` }}></div></div>
               </div>
               <div>
                 <div className="flex justify-between items-end text-xs mb-1.5">
                   <span className="text-amber-500 font-medium">31 - 60 Days</span>
                   <div className="text-right"><span className="font-bold">{exp60} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp60Val)} at risk</p></div>
                 </div>
-                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-amber-400 to-amber-500" style={{ width: `${Math.max((exp60/maxExp)*100, 2)}%`}}></div></div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-amber-400 to-amber-500" style={{ width: `${Math.max((exp60 / maxExp) * 100, 2)}%` }}></div></div>
               </div>
               <div>
                 <div className="flex justify-between items-end text-xs mb-1.5">
                   <span className="text-yellow-500 font-medium">61 - 90 Days</span>
                   <div className="text-right"><span className="font-bold">{exp90} leases</span><p className="text-[10px] text-muted-foreground mt-0.5">{formatCurrency(exp90Val)} at risk</p></div>
                 </div>
-                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500" style={{ width: `${Math.max((exp90/maxExp)*100, 2)}%`}}></div></div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500" style={{ width: `${Math.max((exp90 / maxExp) * 100, 2)}%` }}></div></div>
               </div>
             </div>
             <Button variant="outline" className="w-full mt-4 text-xs h-8" onClick={() => navigate('/contracts')}>Review All Renewals</Button>
@@ -619,7 +628,7 @@ export default function Dashboard() {
               <h3 className="font-heading font-semibold text-sm">Asset Class</h3>
               <div className="flex gap-4 mt-2">
                 <span className="text-[11px] text-muted-foreground flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[hsl(210,52%,40%)]" /> Vehicles ({assetPie[0].value})</span>
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[hsl(199,89%,48%)]" /> IT ({assetPie[1].value})</span>
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[hsl(199,89%,48%)]" /> Equipment ({assetPie[1].value})</span>
               </div>
             </div>
             <div className="h-16 w-16 shrink-0">
@@ -678,9 +687,9 @@ export default function Dashboard() {
     const individualCards: DashboardCardDef[] = [
       {
         id: 'ind-lease-summary',
-        defaultLayout: { x: 0, y: 0, w: 6, h: 2, minW: 3, minH: 1 },
+        defaultLayout: { x: 0, y: 0, w: 8, h: 1, minW: 3, minH: 1 },
         content: (
-          <div className="bg-card rounded-lg border p-5 h-full flex flex-col justify-between shadow-sm">
+          <div className="bg-card rounded-lg border p-4 h-full flex flex-col gap-4 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">My Lease</p>
@@ -709,61 +718,22 @@ export default function Dashboard() {
         ),
       },
       {
-        id: 'ind-next-payment',
-        defaultLayout: { x: 6, y: 0, w: 3, h: 2, minW: 2, minH: 1 },
-        content: (
-          <div className="bg-card rounded-lg border p-5 h-full flex flex-col justify-between shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Next Payment</p>
-                <p className="text-2xl font-bold mt-1.5 font-heading">{formatCurrency(d.nextPaymentAmount)}</p>
-                <p className="text-xs text-muted-foreground mt-0.5 border-t border-border/50 pt-2">Due: {new Date(d.nextPaymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                <IndianRupee className="h-5 w-5 text-emerald-600" />
-              </div>
-            </div>
-          </div>
-        ),
-      },
-      {
-        id: 'ind-total-paid',
-        defaultLayout: { x: 9, y: 0, w: 3, h: 2, minW: 2, minH: 1 },
-        content: (
-          <div className="bg-card rounded-lg border p-5 h-full flex flex-col justify-between shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Amount Paid (Total)</p>
-                <p className="text-2xl font-bold mt-1.5 font-heading">{formatCurrency(d.amountPaid)}</p>
-                <p className="text-xs text-muted-foreground mt-0.5 border-t border-border/50 pt-2">{d.elapsedMonths}/{d.tenureMonths} rentals completed</p>
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shrink-0">
-                <CreditCard className="h-5 w-5 text-indigo-600" />
-              </div>
-            </div>
-          </div>
-        ),
-      },
-      {
         id: 'ind-insurance',
-        defaultLayout: { x: 9, y: 2, w: 3, h: 2, minW: 2, minH: 1 },
+        defaultLayout: { x: 8, y: 0, w: 4, h: 1, minW: 2, minH: 1 },
         content: (
-          <div className={`rounded-lg border p-5 h-full flex flex-col justify-between shadow-sm ${
-            insuranceExpired ? 'bg-rose-50 dark:bg-rose-900/10 border-rose-200' :
+          <div className={`rounded-lg border p-4 h-full flex flex-col gap-4 shadow-sm ${insuranceExpired ? 'bg-rose-50 dark:bg-rose-900/10 border-rose-200' :
             insuranceExpiring ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200' :
-            'bg-card'
-          }`}>
+              'bg-card'
+            }`}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Insurance</p>
-                <p className={`text-lg font-bold mt-1.5 font-heading ${
-                  insuranceExpired ? 'text-rose-600' : insuranceExpiring ? 'text-amber-600' : 'text-emerald-600'
-                }`}>{d.insuranceStatus}</p>
+                <p className={`text-lg font-bold mt-1.5 font-heading ${insuranceExpired ? 'text-rose-600' : insuranceExpiring ? 'text-amber-600' : 'text-emerald-600'
+                  }`}>{d.insuranceStatus}</p>
                 <p className="text-xs text-muted-foreground mt-0.5 border-t border-border/50 pt-2">Exp: {d.insuranceExpiryDate}</p>
               </div>
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                insuranceExpired ? 'bg-rose-100' : insuranceExpiring ? 'bg-amber-100' : 'bg-emerald-50'
-              }`}>
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${insuranceExpired ? 'bg-rose-100' : insuranceExpiring ? 'bg-amber-100' : 'bg-emerald-50'
+                }`}>
                 <ShieldCheck className={`h-5 w-5 ${insuranceExpired ? 'text-rose-600' : insuranceExpiring ? 'text-amber-600' : 'text-emerald-600'}`} />
               </div>
             </div>
@@ -772,9 +742,9 @@ export default function Dashboard() {
       },
       {
         id: 'ind-tickets',
-        defaultLayout: { x: 0, y: 1, w: 5, h: 2, minW: 3, minH: 2 },
+        defaultLayout: { x: 0, y: 1, w: 6, h: 2, minW: 3, minH: 2 },
         content: (
-          <div className="bg-card rounded-lg border p-5 h-full flex flex-col shadow-sm">
+          <div className="bg-card rounded-lg border p-4 h-full flex flex-col shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-heading font-semibold text-sm flex items-center gap-2"><TicketPlus className="h-4 w-4 text-sky-500" /> My Service Requests</h3>
               <button onClick={() => setTicketModalOpen(true)} className="text-[10px] font-semibold bg-primary text-white rounded px-2 py-1 hover:brightness-110 transition-all">+ Raise</button>
@@ -788,9 +758,8 @@ export default function Dashboard() {
                     <p className="font-medium text-sm">{t.subject}</p>
                     <p className="text-xs text-muted-foreground">{t.ticketNo} · {t.status}</p>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded h-fit ${
-                    t.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
-                  }`}>{t.priority}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded h-fit ${t.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                    }`}>{t.priority}</span>
                 </div>
               ))}
             </div>
@@ -799,9 +768,9 @@ export default function Dashboard() {
       },
       {
         id: 'ind-contacts',
-        defaultLayout: { x: 5, y: 1, w: 3, h: 2, minW: 2, minH: 1 },
+        defaultLayout: { x: 6, y: 1, w: 3, h: 2, minW: 2, minH: 1 },
         content: (
-          <div className="bg-card rounded-lg border p-5 h-full flex flex-col shadow-sm">
+          <div className="bg-card rounded-lg border p-4 h-full flex flex-col shadow-sm">
             <h3 className="font-heading font-semibold text-sm mb-4 flex items-center gap-2"><User2 className="h-4 w-4 text-primary" /> My Support Contacts</h3>
             <div className="space-y-4 flex-1">
               <div className="bg-muted/50 rounded-lg p-3">
@@ -820,9 +789,9 @@ export default function Dashboard() {
       },
       {
         id: 'ind-residual',
-        defaultLayout: { x: 8, y: 1, w: 4, h: 2, minW: 3, minH: 1 },
+        defaultLayout: { x: 9, y: 1, w: 3, h: 2, minW: 3, minH: 1 },
         content: (
-          <div className="bg-card rounded-lg border p-5 h-full flex flex-col shadow-sm">
+          <div className="bg-card rounded-lg border p-4 h-full flex flex-col shadow-sm">
             <h3 className="font-heading font-semibold text-sm mb-4 flex items-center gap-2"><IndianRupee className="h-4 w-4 text-amber-500" /> Lease Value Summary</h3>
             <div className="space-y-3 flex-1">
               <div className="flex justify-between items-center">
@@ -857,13 +826,13 @@ export default function Dashboard() {
 
   /* ── Router logic ── */
   const renderDashboardLogic = () => {
-     if (user?.isIndividual) return renderIndividual();
-     if (role.includes("IT Admin")) return renderITAdmin();
-     if (role.includes("RM - Orix")) return renderRM();
-     if (role.toLowerCase().includes("hr manager") || isPortalUser) return renderClientHR();
-     
-     // Fallback for others
-     return renderClientHR(); 
+    if (user?.isIndividual) return renderIndividual();
+    if (role.includes("IT Admin")) return renderITAdmin();
+    if (role.includes("RM - Orix")) return renderRM();
+    if (role.toLowerCase().includes("hr manager") || isPortalUser) return renderClientHR();
+
+    // Fallback for others
+    return renderClientHR();
   }
 
   const hour = new Date().getHours();
@@ -878,7 +847,7 @@ export default function Dashboard() {
           </h1>
           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1 font-medium bg-muted px-2 py-0.5 rounded">
-               <User2 className="h-3 w-3" /> {role}
+              <User2 className="h-3 w-3" /> {role}
             </span>
             {user?.lastLogin && (
               <span className="flex items-center gap-1">
@@ -933,8 +902,7 @@ export default function Dashboard() {
                 <Select value={ticketCategory} onValueChange={(val) => { setTicketCategory(val); setTicketType(""); }}>
                   <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Vehicle">Vehicle</SelectItem>
-                    <SelectItem value="IT Equipment">IT Equipment</SelectItem>
+                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -943,11 +911,35 @@ export default function Dashboard() {
                 <Select value={ticketType} onValueChange={setTicketType} disabled={!ticketCategory}>
                   <SelectTrigger><SelectValue placeholder={ticketCategory ? "Select Type" : "Select Category first"} /></SelectTrigger>
                   <SelectContent>
-                    {ticketCategory && TICKET_CATEGORIES[ticketCategory]?.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    {ticketCategory && requestTypes.filter(t => t.categoryId === ticketCategory).map(type => (
+                      <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select defaultValue="Medium">
+                  <SelectTrigger><SelectValue placeholder="Select Priority" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Required Date</Label>
+                <Input
+                  type="date"
+                  value={ticketDate}
+                  onChange={e => setTicketDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
               </div>
             </div>
             <div className="space-y-2">
